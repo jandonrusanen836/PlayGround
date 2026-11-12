@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101611" />
+  <link rel="icon" href="data:," />
+  <title>Torque Valley — Open Road</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="game-shell">
+    <canvas id="world" aria-label="Torque Valley driving game"></canvas>
+    <div class="world-vignette"></div>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Torque Valley home"><span class="brand-mark">T<span>V</span></span><span class="brand-name">TORQUE<span>VALLEY</span></span></a>
+      <div class="top-center"><span class="live-dot"></span><span id="regionLabel">CANYON RUN</span><i></i><span id="weatherLabel">CLEAR SKIES</span></div>
+      <div class="top-actions"><button class="icon-btn" id="soundBtn" title="Toggle sound">♫</button><button class="icon-btn" id="pauseBtn" title="Pause game">Ⅱ</button><div class="wallet"><span class="coin">◆</span><span id="money">2,450</span><small>CR</small></div><div class="avatar">JD</div></div>
+    </header>
+
+    <section class="left-rail">
+      <div class="eyebrow">YOUR GARAGE <span class="line"></span></div>
+      <button class="car-card" id="carCard" aria-label="Open garage">
+        <div class="car-card-top"><span id="carBrand">NISSAN</span><span class="car-count" id="carCount">01 / 09</span></div>
+        <div class="car-art"><div class="car-art-glow"></div><svg viewBox="0 0 220 92" role="img" aria-label="Sports car illustration"><path class="car-shadow" d="M26 61h171l-10 15H39z"/><path class="car-body" d="M27 58c3-8 9-12 21-15l29-8 20-18c4-4 9-6 15-6h36c11 0 18 5 24 13l13 17c13 3 19 8 21 17l-2 8H25z"/><path class="car-glass" d="m91 36 15-17c2-2 5-4 9-4h30c7 0 12 3 17 10l9 12z"/><path class="car-window-line" d="m137 17-1 20"/><path class="car-light" d="m30 53 18-5-2 6-16 4zm151-4 16 6-1 4-17-4z"/><ellipse class="wheel" cx="63" cy="66" rx="17" ry="17"/><ellipse class="wheel-core" cx="63" cy="66" rx="7" ry="7"/><ellipse class="wheel" cx="166" cy="66" rx="17" ry="17"/><ellipse class="wheel-core" cx="166" cy="66" rx="7" ry="7"/></svg></div>
+        <div class="car-card-bottom"><div><strong id="carModel">SILHOUETTE GT-R</strong><small id="carClass">STREET / AWD</small></div><span class="arrow">↗</span></div>
+      </button>
+      <div class="stat-list"><div class="stat-row"><span>POWER</span><div class="stat-track"><i id="powerBar" style="width:72%"></i></div><b id="powerValue">72</b></div><div class="stat-row"><span>GRIP</span><div class="stat-track"><i id="gripBar" style="width:68%"></i></div><b id="gripValue">68</b></div><div class="stat-row"><span>INTEGRITY</span><div class="stat-track integrity-track"><i id="integrityBar" style="width:100%"></i></div><b id="integrityValue">100</b></div></div>
+      <div class="rail-divider"></div>
+      <div class="eyebrow">QUICK SETUP</div>
+      <div class="quick-row"><span>WEATHER</span><button class="select-btn" id="weatherBtn">☼ &nbsp;Clear <span>⌄</span></button></div>
+      <div class="quick-row"><span>TIME OF DAY</span><button class="select-btn" id="timeBtn">◷ &nbsp;Golden hour <span>⌄</span></button></div>
+      <button class="tune-button" id="tuneBtn"><span>⚙</span> TUNE YOUR RIDE <b>↗</b></button>
+      <div class="garage-foot"><span class="keycap">G</span> OPEN GARAGE <span class="foot-sep">·</span><span class="keycap">T</span> TUNE</div>
+    </section>
+
+    <section class="right-rail">
+      <div class="event-pill"><span class="event-dot"></span> LIVE EVENT <b>×2 REWARDS</b></div>
+      <div class="job-card"><div class="job-head"><span class="eyebrow">ACTIVE CONTRACT</span><span class="job-icon">↗</span></div><h2 id="questTitle">Canyon Courier</h2><p id="questDesc">Push through the pass. Keep your wheels clean and your delivery intact.</p><div class="quest-progress"><div class="progress-label"><span id="questProgressText">0 / 1,500 M</span><b id="questPercent">0%</b></div><div class="progress-track"><i id="questProgressBar"></i></div></div><div class="reward-row"><span>CONTRACT PAYOUT</span><b>◆ <span id="questReward">680</span> CR</b></div><button class="primary-btn" id="acceptBtn">START CONTRACT <span>→</span></button></div>
+      <button class="challenge-card" id="nextQuest"><div class="challenge-icon">✦</div><div><span class="eyebrow">DAILY CHALLENGE</span><strong id="dailyTitle">Clean getaway</strong><small id="dailyText">Drive 2 km without a collision</small></div><span class="challenge-reward">+320<br><small>CR</small></span></button>
+      <button class="room-card" id="roomBtn"><span class="room-symbol">◎</span><span><b>DRIVER LOBBY</b><small id="roomStatus">Find a crew for the canyon</small></span><span class="room-arrow">↗</span></button>
+    </section>
+
+    <div class="speed-hud"><div class="speed-number"><span id="speed">000</span><small>KM/H</small></div><div class="speed-meta"><span id="gear">N</span><div class="rpm"><i id="rpmBar"></i></div><small>RPM</small></div></div>
+    <div class="track-hud"><div class="track-icon">⌖</div><div><small>YOUR ROUTE</small><strong id="routeName">CANYON PASS <span>•</span> 4.2 KM</strong></div><div class="route-line"><i></i></div></div>
+    <div class="weather-toast" id="weatherToast"><span>☼</span><b>CLEAR ROAD</b><small>Ideal grip conditions</small></div>
+    <div class="notification" id="notification" aria-live="polite"></div>
+
+    <div class="bottom-bar"><div class="drive-hint"><span class="keycap wide">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span class="hint-label">DRIVE</span><i></i><span class="keycap">SPACE</span><span class="hint-label">HANDBRAKE</span></div><div class="mode-switch"><button class="mode active" id="driveMode">FREE ROAM</button><button class="mode" id="eventMode">EVENTS</button><button class="mode" id="garageMode">GARAGE</button></div><div class="bottom-right"><span class="online-count"><i></i><b id="driverCount">1</b> DRIVERS NEARBY</span><button class="map-btn" id="mapBtn">⌖ <span>MAP</span></button></div></div>
+
+    <div class="touch-controls" aria-label="Touch driving controls"><button data-control="left">◀</button><button data-control="brake">▼</button><button data-control="right">▶</button><button data-control="throttle">▲</button></div>
+
+    <div class="paused-overlay" id="pausedOverlay"><div class="paused-box"><div class="modal-kicker">TORQUE VALLEY</div><h2>PAUSED</h2><p>Your run is saved. Take a breath, then get back out there.</p><button class="primary-btn" id="resumeBtn">RESUME DRIVE →</button></div></div>
+    <div class="modal-backdrop" id="modalBackdrop">
+      <section class="modal" id="modal" role="dialog" aria-modal="true"><button class="modal-close" id="modalClose">×</button><div id="modalContent"></div></section>
+    </div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

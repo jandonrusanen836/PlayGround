@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+<defs>
+  <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#101c34"/><stop offset=".38" stop-color="#536078"/><stop offset=".62" stop-color="#e87959"/><stop offset=".78" stop-color="#f6ad70"/><stop offset="1" stop-color="#596879"/></linearGradient>
+  <linearGradient id="haze" x2="0" y2="1"><stop stop-color="#ffba7d" stop-opacity=".03"/><stop offset="1" stop-color="#ff9b67" stop-opacity=".5"/></linearGradient>
+  <linearGradient id="cliff" x2=".18" y2="1"><stop stop-color="#333b40"/><stop offset=".45" stop-color="#18252b"/><stop offset="1" stop-color="#080f17"/></linearGradient>
+  <linearGradient id="lake" x2="0" y2="1"><stop stop-color="#ffab78" stop-opacity=".68"/><stop offset=".16" stop-color="#66808b" stop-opacity=".8"/><stop offset="1" stop-color="#182a3a"/></linearGradient>
+  <radialGradient id="sunGlow"><stop stop-color="#ffe5ae" stop-opacity=".95"/><stop offset=".23" stop-color="#ffad72" stop-opacity=".58"/><stop offset="1" stop-color="#f07d68" stop-opacity="0"/></radialGradient>
+  <radialGradient id="fireGlow"><stop stop-color="#ff9a38" stop-opacity=".85"/><stop offset=".28" stop-color="#e7612d" stop-opacity=".32"/><stop offset="1" stop-color="#e7612d" stop-opacity="0"/></radialGradient>
+  <linearGradient id="flame" x2="0" y2="1"><stop stop-color="#fff5b4"/><stop offset=".28" stop-color="#ffc04c"/><stop offset=".67" stop-color="#ff642b"/><stop offset="1" stop-color="#a92320" stop-opacity=".1"/></linearGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="34"/></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values=".25 0 0 0 .1 .25 0 0 0 .1 .25 0 0 0 .1 .1 0 0 0 .1 0"/></filter>
+  <pattern id="rain" width="94" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(12)"><path d="M12 5l-10 42M56 32L45 79M83 94l-9 24M34 88l-8 32" stroke="#d7e8f4" stroke-opacity=".27" stroke-width="1.5"/></pattern>
+  <pattern id="farTrees" width="34" height="29" patternUnits="userSpaceOnUse"><path d="M8 28V12l-6 7 6-14 7 14-6-7M25 29V15l-6 6 6-13 7 13-7-6" fill="#152d31" opacity=".8"/></pattern>
+</defs>
+<!-- stormy golden-hour sky and sun breaking through rain -->
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<ellipse cx="1275" cy="596" rx="490" ry="260" fill="url(#sunGlow)"/>
+<circle cx="1275" cy="570" r="70" fill="#ffd59c" opacity=".84"/>
+<g fill="#263044" opacity=".54">
+ <path d="M-30 316q92-86 181-28 55-82 155-28 72-76 169-10 101-64 201 29l-7 73H-30z"/>
+ <path d="M650 250q75-75 162-15 76-89 182-33 86-73 169-1 67-52 150-12 72-60 151 7l12 117H640z" opacity=".7"/>
+</g>
+<path d="M0 558l126-116 103 85 143-190 133 146 117-104 105 120 135-181 113 128 103-83 111 112 135-157 105 101 117-127 120 111v267H0z" fill="#64747e" opacity=".5"/>
+<path d="M0 624l146-110 142 83 126-120 128 100 124-75 125 86 110-111 153 85 128-121 128 72 119-87 131 111v212H0z" fill="#354d59"/>
+<path d="M450 477l92-88 95 92-58-29-39 17-28-30zM1000 473l79-85 95 84-54-27-33 22-35-25zM1435 456l80-90 106 88-65-29-33 18-34-25z" fill="#c7bcb1" opacity=".52"/>
+<!-- valley map, ridgelines, forest bands and reflective water -->
+<path d="M0 644q181-45 331 13 192-74 367-4 143-59 316-3 167-83 339-8 261-92 567 9v240H0z" fill="#263d40"/>
+<path d="M0 698q205-72 385-10 180-71 341 7 183-91 369-17 193-74 382 1 199-77 443 7v192H0z" fill="#1c3439"/>
+<path d="M0 700h1920v203H0z" fill="url(#farTrees)" opacity=".91"/>
+<path d="M812 628q76 46 100 109 31 84 125 110 64 18 105 92l-79 7q-42-67-104-78-119-20-145-125-16-67-91-102z" fill="url(#lake)" opacity=".9"/>
+<path d="M883 668q38 25 51 59m98 96q45 23 78 54" fill="none" stroke="#ffc18c" stroke-opacity=".78" stroke-width="5"/>
+<path d="M0 814q226-55 423 7 200-91 423-11 195-70 393-4 243-91 681 8v266H0z" fill="#182a2d"/>
+<!-- tiny settlements across the island give the valley scale -->
+<g fill="#dec19a" opacity=".72"><path d="M530 724h24v-20l-12-11-12 11zM566 735h19v-17l-10-9-9 9zM1471 705h25v-22l-13-11-12 11zM1510 714h18v-17l-9-8-9 8z"/></g>
+<g fill="#ffc57f" opacity=".9"><circle cx="542" cy="714" r="2.5"/><circle cx="1479" cy="695" r="2.5"/><circle cx="1517" cy="706" r="2"/></g>
+<!-- near hillside and cliff ledge framing the overlook -->
+<path d="M0 791q185-38 334 22 107 42 208 29 105-13 199 43 114 66 242 52 128-14 220 54 116 84 251 24 120-54 266 13v52H0z" fill="#26372f"/>
+<path d="M0 850q196-28 312 19 124 50 240 19 111-30 208 41 98 72 235 58 110-10 197 61 74 61 168 17 130-62 228-1 146 91 332 5v111H0z" fill="url(#cliff)"/>
+<path d="M0 855q196-28 312 19 124 50 240 19 111-30 208 41 98 72 235 58 110-10 197 61 74 61 168 17 130-62 228-1 146 91 332 5" fill="none" stroke="#53604c" stroke-width="9" opacity=".8"/>
+<!-- silhouetted pine tufts on the ridge -->
+<g fill="#101f20"><path d="M90 850l32-78 32 78h-21v21h-22v-21zM245 866l28-67 28 67h-18v19h-21v-19zM1680 889l34-82 34 82h-22v24h-25v-24zM1802 893l27-64 28 64h-18v18h-20v-18z"/></g>
+<!-- firelight on the wet grass -->
+<ellipse cx="1448" cy="883" rx="270" ry="170" fill="url(#fireGlow)"/>
+<g opacity=".9" stroke-linecap="round"><path d="M1312 930l110-32M1335 947l100-51M1400 953l99-30" stroke="#38251d" stroke-width="17"/><path d="M1312 927l110-31M1335 944l100-50M1400 950l99-30" stroke="#b87543" stroke-width="5"/></g>
+<path d="M1387 920q-21-46 6-82 4 25 15 34 1-59 40-91-10 44 8 62 3-37 34-56-8 40 14 63 13 22-8 69z" fill="url(#flame)"/>
+<path d="M1411 920q-10-34 11-56 4 17 13 22 0-28 22-47-5 32 9 44 16 19 3 37z" fill="#fff0ad" opacity=".94"/>
+<ellipse cx="1441" cy="915" rx="90" ry="24" fill="#ffb248" opacity=".3" filter="url(#soft)"/>
+<!-- sparks -->
+<g fill="#ffd27b"><circle cx="1397" cy="812" r="3"/><circle cx="1461" cy="790" r="2"/><circle cx="1485" cy="835" r="2.5"/><circle cx="1378" cy="861" r="2"/></g>
+<!-- rain curtain and atmospheric texture -->
+<rect width="1920" height="1080" fill="url(#rain)" opacity=".52"/>
+<rect width="1920" height="1080" filter="url(#grain)" opacity=".12"/>
+<rect width="1920" height="1080" fill="url(#haze)"/>
+<rect width="1920" height="1080" fill="#08111d" opacity=".17"/>
+</svg>

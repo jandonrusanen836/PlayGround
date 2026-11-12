@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Horizons — Chapter 4 Season 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Burbank+Big+Condensed:wght@400;700&family=Burbank+Big:wght@400;700&family=Segoe+UI:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" width="1280" height="720"></canvas>
+
+<!-- HUD (in-game) -->
+<div id="hud" class="hud-layer" style="display:none;">
+  <div class="hud-top">
+    <div id="inv" class="inv"></div>
+    <div class="hud-stats">
+      <div class="big" id="rankText">0 / 0</div>
+      <div class="small" id="killText">KILLS 0</div>
+      <div class="small" id="coinText">C 0</div>
+    </div>
+  </div>
+  <div class="storm" id="stormText">STORM CLOSING</div>
+  <div id="crosshair"></div>
+  <div id="msg"></div>
+</div>
+
+<div id="ui" class="ui-layer"></div>
+
+<!-- STARTUP / BOOT SCREEN -->
+<div id="startup" class="startup">
+  <div class="startup-inner">
+    <div class="startup-bg"></div>
+    <canvas id="bootCanvas" class="boot-canvas"></canvas>
+    <div class="startup-content">
+      <div class="boot-line" id="bootLine1">INITIALIZING CHAPTER 4...</div>
+      <div class="boot-line" id="bootLine2">LOADING SEASON 1 ASSETS...</div>
+      <div class="logo">FORTNITE</div>
+      <div class="season">CHAPTER 4 · SEASON 1</div>
+      <div class="slogan">THE LAST REALITY</div>
+      <button class="btn primary" id="startBtn" style="display:none;">ENTER</button>
+      <div class="version">Project Horizons — Chapter 4 Season 1 · v1.0.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="panel lobby visible">
+  <button class="close-btn" id="btnMenu">MENU</button>
+  <div class="coins-bar">
+    <span class="coin" id="coinAmt">C 0</span>
+    <span class="dot" id="lvlDot">LVL <span id="lvl">1</span></span>
+    <div class="xpbar-track"><div class="xpbar-fill" id="xpbar"></div></div>
+  </div>
+
+  <div class="lobby-wrap">
+    <div class="lobby-left">
+      <div class="card">
+        <h2>Battle Bus</h2>
+        <div style="font-size:13px;color:#a8b4d1;margin-bottom:10px;">Choose your drop mode</div>
+        <div class="mode-grid">
+          <div class="mode-btn selected" data-mode="ai">
+            <div class="t">AI Battle Royale</div>
+            <div class="d">35–45 AI · rest real players</div>
+          </div>
+          <div class="mode-btn" data-mode="real">
+            <div class="t">100 Player Lobby</div>
+            <div class="d">All real player slots</div>
+          </div>
+        </div>
+        <div id="aiWrap" style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#9fb0d2;margin-bottom:6px;">
+            <span>AI Count</span><span id="aiVal">40</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn small secondary" id="aiMinus">−</button>
+            <button class="btn small secondary" id="aiPlus">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Lobby Music</h2>
+        <div style="font-size:13px;color:#a8b4d1;margin-bottom:10px;">Pick your Chapter 4 Season 1 track</div>
+        <div class="music-grid" id="musicGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Quests (3 active)</h2>
+        <div id="quests" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div class="hint">Complete 3 quests · 5–10 coins each</div>
+      </div>
+    </div>
+
+    <div class="lobby-right">
+      <div class="card" style="grid-column:span 2;">
+        <h2>Map — Chapter 4 Season 1</h2>
+        <canvas id="mapCanvas" width="460" height="300" style="width:100%;height:100%;background:#0b0c10;border:1px solid rgba(255,255,255,0.12);border-radius:8px;"></canvas>
+        <div class="hint">The Citadel · Shattered Slabs · Anvil Square · Brutal Bastion · Faulty Splits · Mega City · Knotty Nets · Lonely Labs</div>
+      </div>
+
+      <div class="card">
+        <h2>Battle Pass</h2>
+        <div style="font-size:13px;color:#a8b4d1;margin-bottom:8px;">950 Coins · 8 Skins + 2 Emotes</div>
+        <button class="btn primary full" id="btnBuyPass" style="width:100%;">Buy Battle Pass — 950 C</button>
+        <div style="margin-top:8px;" id="passStatus"></div>
+      </div>
+
+      <div class="card">
+        <h2>Item Shop</h2>
+        <div style="font-size:13px;color:#a8b4d1;margin-bottom:8px;">Skins · Wraps · Emotes · Loading Screens · Bundles</div>
+        <button class="btn primary full" id="btnShop">Open Item Shop</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row" style="justify-content:center;margin-top:16px;">
+    <button class="btn primary" id="playBtn" style="padding:16px 48px;font-size:18px;">DROP INTO MATCH</button>
+  </div>
+  <div class="hint">WASD Move · Mouse Aim · Click Shoot · 1–4 Weapons · F Interact · Space Jump · Enter Menu</div>
+</div>
+
+<!-- SHOP -->
+<div id="shop" class="panel shop">
+  <button class="close-btn" id="closeShop">BACK</button>
+  <h2 style="text-align:center;margin-bottom:16px;color:#ffd166;font-family:'Burbank Big Condensed',sans-serif;letter-spacing:4px;">ITEM SHOP — CHAPTER 4</h2>
+  <div class="coins-bar" style="justify-content:center;margin-bottom:16px;">
+    <span class="coin" id="shopCoinAmt">C 0</span>
+  </div>
+  <div style="text-align:center;margin-bottom:14px;">
+    <span class="location-chip">Skins</span>
+    <span class="location-chip">Wraps</span>
+    <span class="location-chip">Emotes</span>
+    <span class="location-chip">Loading Screens</span>
+    <span class="location-chip">Bundles</span>
+  </div>
+  <div id="shopGrid" class="grid-wrap"></div>
+  <div class="hint" style="position:static;margin-top:12px;">Prices scale by how favorited the item is in Fortnite</div>
+</div>
+
+<!-- BATTLE PASS -->
+<div id="battlepass" class="panel battlepass">
+  <button class="close-btn" id="closeBp">BACK</button>
+  <h2 style="text-align:center;margin-bottom:16px;color:#ffd166;font-family:'Burbank Big Condensed',sans-serif;letter-spacing:4px;">BATTLE PASS — CHAPTER 4 SEASON 1</h2>
+  <div class="coins-bar" style="justify-content:center;margin-bottom:16px;">
+    <span class="coin" id="bpCoinAmt">C 0</span>
+    <span style="color:#cfd8ea;margin-left:10px;font-size:13px;">Tier <span id="bpTier">0</span></span>
+  </div>
+  <div id="bpGrid" class="bp-rows"></div>
+  <div class="hint" style="position:static;margin-top:12px;">8 Skins · 2 Emotes · unlock by tier</div>
+</div>
+
+<!-- QUESTS -->
+<div id="questsPanel" class="panel quests">
+  <button class="close-btn" id="closeQuests">BACK</button>
+  <h2 style="text-align:center;margin-bottom:16px;color:#ffd166;font-family:'Burbank Big Condensed',sans-serif;letter-spacing:4px;">QUESTS</h2>
+  <div id="questsShop" class="grid-wrap"></div>
+  <div class="hint" style="position:static;margin-top:12px;">Complete 3 quests · 5–10 coins each</div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

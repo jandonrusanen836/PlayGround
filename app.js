@@ -738,26 +738,50 @@ const queueStatus = document.querySelector('.queue-status');
 const queueTitle = document.querySelector('#queue-title');
 const queueDetail = document.querySelector('#queue-detail');
 const queueTimer = document.querySelector('#queue-timer');
+const queueOptions = [...document.querySelectorAll('.queue-option')];
+const lobbyDisclaimer = document.querySelector('#lobby-disclaimer');
+let selectedMatchType = 'practice';
 let queueInterval = 0;
 let queueTimeout = 0;
 let queueStartedAt = 0;
+
+function setMatchType(type) {
+  if (queueInterval || queueTimeout) return;
+  selectedMatchType = type;
+  queueOptions.forEach((option) => {
+    const selected = option.dataset.matchType === type;
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-pressed', String(selected));
+  });
+  const online = type === 'online';
+  queueStatus.classList.remove('searching');
+  queueTitle.textContent = online ? 'ONLINE SERVICE NOT CONFIGURED' : 'READY TO DEPLOY';
+  queueDetail.textContent = online ? 'A multiplayer server is required to search.' : 'Practice match · bots fill open slots';
+  queueTimer.textContent = online ? '--:--' : '00:00';
+  findMatchButton.disabled = online;
+  findMatchButton.querySelector('span').textContent = online ? 'ONLINE UNAVAILABLE' : 'FIND MATCH';
+  lobbyDisclaimer.textContent = online
+    ? 'ONLINE MULTIPLAYER REQUIRES A MATCHMAKING SERVER'
+    : 'LOCAL PRACTICE MATCHMAKING · BOTS FILL OPEN SLOTS';
+}
+
+queueOptions.forEach((option) => {
+  option.addEventListener('click', () => setMatchType(option.dataset.matchType));
+});
 
 function stopMatchmaking() {
   window.clearInterval(queueInterval);
   window.clearTimeout(queueTimeout);
   queueInterval = 0;
   queueTimeout = 0;
-  queueStatus.classList.remove('searching');
-  queueTitle.textContent = 'READY TO DEPLOY';
-  queueDetail.textContent = 'Practice match · bots fill open slots';
-  queueTimer.textContent = '00:00';
-  findMatchButton.disabled = false;
-  findMatchButton.querySelector('span').textContent = 'FIND MATCH';
   cancelQueueButton.classList.add('hidden');
+  queueOptions.forEach((option) => { option.disabled = false; });
+  setMatchType(selectedMatchType);
 }
 
 function beginMatchmaking() {
-  if (queueInterval || game.playing) return;
+  if (selectedMatchType !== 'practice' || queueInterval || game.playing) return;
+  queueOptions.forEach((option) => { option.disabled = true; });
   queueStartedAt = Date.now();
   queueStatus.classList.add('searching');
   queueTitle.textContent = 'SEARCHING FOR MATCH';

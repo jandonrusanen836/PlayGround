@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101510" />
+  <title>Concrete Kings — Street Football</title>
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Concrete Kings home"><span class="brand-mark">CK</span><span>CONCRETE<span class="brand-muted"> KINGS</span></span></a>
+      <div class="top-center"><span class="live-dot"></span> THE YARD <span class="top-divider">/</span> EAST LONDON, UK</div>
+      <div class="top-right"><span class="sound-label">SOUND</span><button class="icon-button" id="soundToggle" aria-label="Toggle sound">♫</button><span class="avatar">YOU</span></div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-art" aria-label="Illustration of a street football stadium">
+        <canvas id="scene" width="1440" height="780"></canvas>
+        <div class="scene-grain"></div>
+        <div class="scene-vignette"></div>
+        <div class="venue-tag"><span class="venue-icon">✳</span><span><b>THE YARD</b><small>ROOFTOP COURT · EST. 1998</small></span></div>
+        <div class="weather-tag"><span>☼</span> GOLDEN HOUR <i></i> 18°C</div>
+        <div class="scene-caption"><span>01</span> &nbsp; SMALL PITCH. BIG MOMENTS.</div>
+      </div>
+
+      <section class="lobby" id="lobby">
+        <div class="eyebrow"><span class="eyebrow-line"></span> PICK YOUR GAME</div>
+        <h1>OWN<br>THE <em>YARD.</em></h1>
+        <p class="intro">No big stadium. No big egos. Just you, the ball, and a court that remembers every nutmeg.</p>
+
+        <div class="setup-block">
+          <div class="label-row"><span>YOUR MATCH</span><span class="label-note">CHOOSE YOUR FORMAT</span></div>
+          <div class="format-options" role="group" aria-label="Match format">
+            <button class="format-card selected" data-format="1v1"><span class="format-big">1<span>v</span>1</span><span class="format-name">DUEL</span><span class="format-icon">↔</span></button>
+            <button class="format-card" data-format="2v2"><span class="format-big">2<span>v</span>2</span><span class="format-name">DOUBLES</span><span class="format-icon">⟷</span></button>
+          </div>
+        </div>
+
+        <div class="setup-block opponent-block">
+          <div class="label-row"><span>WHO'S IN YOUR WAY?</span><span class="label-note">OPPOSITION</span></div>
+          <div class="opponent-options" role="group" aria-label="Opponent">
+            <button class="opponent-card selected" data-opponent="copilot"><span class="opponent-avatar bot-avatar">✦</span><span><b>Copilot Fusion Direct</b><small>Reads the game. Plays to win.</small></span><span class="check">✓</span></button>
+            <button class="opponent-card" data-opponent="local"><span class="opponent-avatar human-avatar">2P</span><span><b>Local player</b><small>Pass a controller · share the court</small></span><span class="check">✓</span></button>
+          </div>
+        </div>
+
+        <div class="power-vote">
+          <div><div class="label-row vote-label"><span>POWER-UPS THIS MATCH?</span><span class="vote-count">VOTE 01 / 02</span></div><p>Vote before kickoff. The yard decides.</p></div>
+          <div class="vote-buttons"><button class="vote-button" data-vote="yes"><span>✦</span> YES</button><button class="vote-button active" data-vote="no"><span>—</span> NO</button></div>
+        </div>
+
+        <button class="play-button" id="playButton"><span>STEP ONTO THE COURT</span><span class="play-arrow">↗</span></button>
+        <div class="controls-hint"><span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span><span>MOVE</span><span class="hint-sep"></span><span class="keycap wide">SPACE</span><span>SHOOT</span><span class="keycap shift">⇧</span><span>SPRINT</span></div>
+      </section>
+    </section>
+
+    <section class="bottom-strip">
+      <div class="strip-stat"><span class="strip-icon">⌁</span><span><b>STREET RULES</b><small>FIRST TO 5 · 3 MIN HALVES</small></span></div>
+      <div class="strip-center"><span class="pulse-ring"></span> COURT IS OPEN <span class="strip-slash">/</span> 12 PLAYERS WATCHING</div>
+      <div class="strip-right"><span class="rank-label">YARD RANK</span><b>ROOKIE <span>01</span></b><span class="rank-bar"><i></i></span></div>
+    </section>
+
+    <section class="match-screen hidden" id="matchScreen" aria-label="Football match">
+      <canvas id="gameCanvas" aria-label="Live street football match"></canvas>
+      <div class="match-hud">
+        <button class="back-button" id="backButton">← &nbsp; BACK TO LOBBY</button>
+        <div class="scoreboard"><span class="team-score home-score" id="homeScore">0</span><div class="score-mid"><span class="match-live"><i></i> LIVE</span><b>THE YARD</b><small id="gameClock">03:00</small></div><span class="team-score away-score" id="awayScore">0</span></div>
+        <div class="match-format" id="matchFormat">1V1 · FIRST TO 5</div>
+      </div>
+      <div class="power-banner hidden" id="powerBanner"><span class="power-star">✦</span><span><small>POWER-UP ACTIVE</small><b id="powerName">2× POWER SHOTS</b></span><span class="power-timer" id="powerTimer">15</span><div class="dice" id="dice">⚄</div></div>
+      <div class="toast" id="toast"></div>
+      <div class="game-help"><span>WASD MOVE</span><span>SPACE SHOOT</span><span>SHIFT SPRINT</span><span>E TACKLE</span><span>R RESET</span></div>
+      <div class="mobile-controls" id="mobileControls"><div class="dpad"><button data-key="w">▲</button><div><button data-key="a">◀</button><button data-key="s">▼</button><button data-key="d">▶</button></div></div><div class="action-pad"><button data-key="shift" class="sprint-control">SPRINT</button><button data-key="space" class="shoot-control">SHOOT</button></div></div>
+      <div class="end-overlay hidden" id="endOverlay"><div class="end-card"><span class="end-kicker">THE YARD REMEMBERS</span><h2 id="endTitle">YOUR COURT.</h2><p id="endMessage">A match for the books.</p><button class="play-button" id="rematchButton"><span>RUN IT BACK</span><span class="play-arrow">↗</span></button><button class="end-back" id="endBack">BACK TO THE LOBBY</button></div></div>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

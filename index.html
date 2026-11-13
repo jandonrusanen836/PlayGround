@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071326" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071326'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Arial' font-size='35' font-weight='700' fill='white'%3EPS%3C/text%3E%3C/svg%3E" />
+  <title>PlayStation — Console Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <div id="app" class="app">
+    <header class="topbar" id="topbar" hidden>
+      <button class="brand" data-action="home" aria-label="PlayStation home"><span class="brand-mark">P<span>S</span></span><span class="brand-name">PlayStation</span></button>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-tab="games">Games</button><button class="nav-link" data-tab="plus">PlayStation Plus</button><button class="nav-link" data-tab="store">Store</button><button class="nav-link" data-tab="downloads">Downloads</button>
+      </nav>
+      <div class="top-actions"><button class="icon-btn search-btn" data-action="search" aria-label="Search">⌕</button><button class="user-chip" data-action="profile"><span class="avatar small">J</span><span class="user-name">Jordan</span><span class="chevron">⌄</span></button></div>
+    </header>
+
+    <main id="screens">
+      <section class="screen welcome-screen active" id="welcome">
+        <div class="welcome-copy"><div class="eyebrow"><i></i> YOUR NEXT ADVENTURE STARTS HERE</div><h1>Play has<br><em>no limits.</em></h1><p>A console experience made for the moments that stay with you.</p>
+          <button class="power-button" data-action="power"><span class="power-symbol">◉</span><span>Press the PlayStation icon to begin</span><span class="button-arrow">→</span></button>
+          <div class="welcome-foot"><span class="tiny-ps">PS</span><span>Press <kbd>Enter</kbd> or tap to power on</span></div>
+        </div>
+        <div class="console-stage" aria-hidden="true"><div class="halo"></div><div class="console"><div class="console-wing left-wing"></div><div class="console-core"><div class="console-glow"></div><div class="console-slit"></div><div class="console-mark">PS5</div></div><div class="console-wing right-wing"></div><div class="console-base"></div></div><div class="stage-caption"><span>PLAY HAS NO LIMITS</span><span>01 — READY</span></div></div>
+        <div class="welcome-bottom"><span>© 2025 Sony Interactive Entertainment</span><span>CONSOLE EXPERIENCE <b>•</b> DEMO</span></div>
+      </section>
+
+      <section class="screen profile-screen" id="profiles">
+        <div class="profile-backdrop"></div><div class="profile-content"><div class="eyebrow"><i></i> WELCOME BACK</div><h1>Who's playing?</h1><p class="muted">Choose a player to continue</p>
+          <button class="profile-card" data-action="select-profile"><span class="avatar profile-avatar">J</span><span class="profile-info"><strong>Jordan</strong><small>Online · Ready to play</small></span><span class="profile-chevron">→</span></button>
+          <div class="profile-hint"><span>Continue as <b>Jordan</b></span><span>✦ &nbsp; 12,480 XP</span></div>
+        </div><div class="profile-console-glow"></div>
+      </section>
+
+      <section class="screen dashboard-screen" id="dashboard">
+        <div class="dashboard-inner">
+          <div class="greeting-row"><div><div class="eyebrow"><i></i> MONDAY, NOVEMBER 17, 2025</div><h1>Good evening, Jordan <span class="wave">✦</span></h1><p class="muted">Your next great adventure is one click away.</p></div><div class="status-pill"><span class="status-dot"></span> All systems operational</div></div>
+          <div class="feature-row">
+            <article class="hero-card feature-card"><div class="hero-art art-fortnite"><div class="art-orb"></div><div class="art-silhouette"></div><span class="art-label">DROP IN</span></div><div class="hero-overlay"></div><div class="hero-content"><span class="tag">FEATURED · FREE TO PLAY</span><h2>Fortnite</h2><p>Jump into the action. Your squad is waiting.</p><button class="primary-btn" data-play="fortnite">Play now <span>→</span></button></div><div class="hero-pagination"><i class="selected"></i><i></i><i></i></div></article>
+            <article class="side-feature"><div class="side-top"><div class="eyebrow">YOUR CONSOLE</div><div class="console-status"><div class="mini-console">PS</div><div><b>PlayStation 5</b><small>Ready to play</small></div><span class="online-dot"></span></div></div><div class="side-divider"></div><div class="side-bottom"><div class="eyebrow">RECENTLY PLAYED</div><div class="recent-game"><div class="mini-art art-rocket">RL</div><div><b>Rocket League</b><small>Today · 42 min</small></div><button data-play="rocketleague" aria-label="Play Rocket League">→</button></div><div class="recent-game"><div class="mini-art art-soccer">FC</div><div><b>EA SPORTS FC 24</b><small>Yesterday · 1 hr</small></div><button data-play="fc24" aria-label="Play EA SPORTS FC 24">→</button></div></div></article>
+          </div>
+          <div class="section-heading"><div><span class="eyebrow">PICK UP WHERE YOU LEFT OFF</span><h2>Your games <span class="count">05</span></h2></div><button class="text-link" data-tab="games">View library <span>→</span></button></div>
+          <div class="game-strip" id="home-games"></div>
+          <div class="dashboard-lower"><button class="promo-banner" data-tab="plus"><span class="plus-icon">+</span><span><b>Make your play extraordinary</b><small>PlayStation Plus · Discover your next favourite</small></span><span class="promo-arrow">→</span><span class="banner-glow"></span></button><div class="quick-widget"><span class="widget-icon">↓</span><span><b>Downloads</b><small id="quick-downloads">You're all caught up</small></span><button data-tab="downloads">→</button></div></div>
+        </div>
+      </section>
+
+      <section class="screen library-screen" id="games">
+        <div class="page-heading"><div><div class="eyebrow"><i></i> YOUR COLLECTION</div><h1>Game library</h1><p class="muted">All your favourites, ready when you are.</p></div><div class="library-tools"><button class="filter-btn active" data-filter="all">All games <span>5</span></button><button class="filter-btn" data-filter="installed">Installed</button><button class="sort-btn" data-action="sort">Recently played <span>⌄</span></button></div></div>
+        <div class="library-feature"><div class="library-feature-art art-fortnite"><div class="art-orb"></div><div class="art-silhouette"></div><span class="art-label">DROP IN</span></div><div class="library-feature-copy"><span class="tag">MOST PLAYED THIS WEEK</span><h2>Fortnite</h2><p>Build, battle, and be the last one standing. Jump into the island with friends — the next big adventure is always around the corner.</p><div class="game-meta"><span>◉ &nbsp; 82.4 GB</span><span>◷ &nbsp; Played today</span><span class="installed-tag">✓ Installed</span></div><div class="feature-buttons"><button class="primary-btn" data-play="fortnite">Play game <span>→</span></button><button class="secondary-btn" data-download="fortnite">Check for update</button></div></div></div>
+        <div class="library-title"><h2>All games <span class="count">05</span></h2><span class="muted">Sorted by recently played</span></div><div class="library-grid" id="library-grid"></div>
+      </section>
+
+      <section class="screen plus-screen" id="plus">
+        <div class="plus-hero"><div class="plus-orbit orbit-a"></div><div class="plus-orbit orbit-b"></div><div class="plus-copy"><div class="eyebrow"><i></i> PLAY WITHOUT LIMITS</div><div class="plus-wordmark"><span>PlayStation</span><b>PLUS</b></div><h1>More to play.<br><em>More to love.</em></h1><p>Discover hundreds of incredible games, new adventures every month, and so much more.</p><button class="primary-btn gold-btn" data-action="join-plus">Explore PlayStation Plus <span>→</span></button><div class="fine-print">A simulated membership experience · No purchase required</div></div><div class="plus-art"><div class="plus-disc disc-one">+</div><div class="plus-disc disc-two">✦</div><div class="plus-disc disc-three">◈</div><div class="plus-star">✳</div><div class="plus-layers"></div></div></div>
+        <div class="membership-row"><div><span class="eyebrow">YOUR MEMBERSHIP</span><h2>Choose your way to play</h2><p class="muted">Explore the tiers and find your perfect play.</p></div><div class="tier-cards"><button class="tier-card" data-action="join-plus"><span class="tier-name">ESSENTIAL</span><b>Play online.<br>Play together.</b><small>Monthly games · Online multiplayer</small><span class="tier-cta">Explore tier →</span></button><button class="tier-card extra" data-action="join-plus"><span class="tier-name">EXTRA <em>POPULAR</em></span><b>A world of games<br>at your fingertips.</b><small>Game catalogue · Ubisoft+ Classics</small><span class="tier-cta">Explore tier →</span></button><button class="tier-card premium" data-action="join-plus"><span class="tier-name">PREMIUM <em>BEST VALUE</em></span><b>Every era.<br>Every adventure.</b><small>Classics catalogue · Game trials</small><span class="tier-cta">Explore tier →</span></button></div></div>
+      </section>
+
+      <section class="screen store-screen" id="store">
+        <div class="store-hero"><div class="store-copy"><div class="eyebrow"><i></i> PLAY YOUR NEXT STORY</div><h1>PlayStation<br><em>Store</em></h1><p>New worlds. Legendary adventures. Your next favourite starts here.</p><button class="primary-btn" data-action="browse-store">Browse games <span>→</span></button></div><div class="store-art"><div class="store-ring ring-one"></div><div class="store-ring ring-two"></div><span class="store-star star-one">✦</span><span class="store-star star-two">✳</span><div class="store-box"><span>PLAY<br>YOUR<br><b>STORY</b></span></div></div><div class="store-note">DISCOVER SOMETHING NEW <span>✦</span></div></div>
+        <div class="store-toolbar"><div><div class="eyebrow">CURATED FOR YOU</div><h2>Discover</h2></div><div class="store-categories"><button class="category-btn active" data-category="Featured">Featured</button><button class="category-btn" data-category="New releases">New releases</button><button class="category-btn" data-category="Deals">Deals</button></div></div><div class="store-grid" id="store-grid"></div>
+      </section>
+
+      <section class="screen downloads-screen" id="downloads">
+        <div class="page-heading"><div><div class="eyebrow"><i></i> CONSOLE ACTIVITY</div><h1>Downloads & updates</h1><p class="muted">Manage your downloads and keep your console up to date.</p></div><button class="secondary-btn" data-action="system-update">↻ &nbsp; Check for system update</button></div>
+        <div class="system-card"><div class="system-icon">◈</div><div class="system-copy"><span class="eyebrow">SYSTEM SOFTWARE</span><h3>PlayStation 5 system</h3><p>Version 25.04-10.00.00 · Your system is up to date</p></div><span class="up-to-date"><i></i> Up to date</span><button class="more-btn" data-action="system-update">···</button></div>
+        <div class="downloads-header"><h2>Downloads <span class="count" id="download-count">0</span></h2><button class="text-link" data-action="clear-completed">Clear completed</button></div><div class="download-list" id="download-list"></div><div class="empty-downloads" id="empty-downloads"><div class="empty-icon">↓</div><h3>Nothing downloading right now</h3><p>Your downloads and updates will show up here.</p><button class="text-link" data-tab="store">Explore the store →</button></div>
+        <div class="download-tip"><span>◉</span><div><b>Keep your games up to date</b><small>Downloads can continue while your console is in rest mode.</small></div><span class="tip-status">Rest mode downloads <b>On</b></span></div>
+      </section>
+    </main>
+
+    <footer class="system-footer" id="system-footer" hidden><span><span class="tiny-ps">PS</span> &nbsp; PlayStation 5</span><span class="footer-center"><span class="status-dot"></span> Connected</span><span>◷ &nbsp; <span id="clock">20:41</span> &nbsp; <span class="footer-divider">|</span> &nbsp; ◉</span></footer>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" data-action="close-modal" aria-label="Close">×</button><div id="modal-content"></div></section></div>
+    <div class="toast" id="toast"><span>✓</span><span id="toast-message">Done</span></div>
+    <div class="power-flash" id="power-flash"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

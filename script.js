@@ -1,1205 +1,356 @@
-// Wii Sports Remake - Main Game Script
-// ====================================
+(() => {
+  'use strict';
 
-// Game state
-const gameState = {
-  currentSport: null,
-  currentMode: 'single', // 'single' or 'online'
-  player1: { mii: null, ready: false },
-  player2: { mii: null, ready: false },
-  score: { p1: 0, p2: 0 },
-  matchmakingTime: 0,
-  matchmakingInterval: null,
-  isMatchmaking: false
-};
-
-// Sports data
-const sports = {
-  tennis: {
-    name: 'Tennis',
-    description: 'Doubles matches focusing on swing timing, angle, and spin',
-    controls: 'Swipe up/forward to swing, swipe angle determines power and curve',
-    init: initTennis,
-    update: updateTennis,
-    render: renderTennis
-  },
-  baseball: {
-    name: 'Baseball',
-    description: '3-inning games - bat and pitch with timing',
-    controls: 'Swipe up to swing/batter, swipe to pitch with curve',
-    init: initBaseball,
-    update: updateBaseball,
-    render: renderBaseball
-  },
-  golf: {
-    name: 'Golf',
-    description: '3-hole or 9-hole courses accounting for wind, elevation, slope',
-    controls: 'Select club, aim, swipe up to hit with loft and backspin',
-    init: initGolf,
-    update: updateGolf,
-    render: renderGolf
-  },
-  boxing: {
-    name: 'Boxing',
-    description: '3-round matches - guard, dodge, throw jabs, hooks, uppercuts',
-    controls: 'Swipe up/forward to punch, swipe side-to-side to dodge',
-    init: initBoxing,
-    update: updateBoxing,
-    render: renderBoxing
-  },
-  bowling: {
-    name: 'Bowling',
-    description: 'Standard 10-frame bowling - adjust position, angle, wrist twist',
-    controls: 'Swipe up to roll ball, curve swipe to add spin',
-    init: initBowling,
-    update: updateBowling,
-    render: renderBowling
-  }
-};
-
-// Character creator state
-const creatorState = {
-  gender: 'male',
-  headShape: 'default',
-  hairStyle: 'default',
-  eyebrowStyle: 'default',
-  eyeStyle: 'default',
-  noseStyle: 'default',
-  mouthStyle: 'default',
-  facialHair: 'none',
-  glasses: 'none',
-  outfitColor: '#FFC425' // Wii Yellow
-};
-
-// Mii character Proportions (nostalgic)
-const miiProportions = {
-  hand: { type: 'sphere', size: 0.8, float: true },
-  torso: { type: 'capsule', height: 1.2, width: 0.8 },
-  leg: { type: 'stub', length: 0.4 },
-  foot: { type: 'small', size: 0.3 }
-};
-
-// Initialize the game
-document.addEventListener('DOMContentLoaded', () => {
-  initCharacterCreator();
-  initEventListeners();
-  startMenuMusic();
-});
-
-// Go back to main menu
-function goBack() {
-  showScreen('main-menu');
-  resetGame();
-}
-
-// Show a screen, hide others
-function showScreen(screenId) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
-}
-
-// Initialize character creator
-function initCharacterCreator() {
-  const miiDiv = document.getElementById('miicharacter');
-  updateMiiDisplay();
-  
-  // Color picker
-  document.getElementById('outfit-color').addEventListener('input', (e) => {
-    creatorState.outfitColor = e.target.value;
-    updateMiiDisplay();
-  });
-}
-
-// Update the Miidisplay based on creator state
-function updateMiiDisplay() {
-  const miiDiv = document.getElementById('miicharacter');
-  miiDiv.innerHTML = '';
-  
-  const mii = document.createElement('div');
-  mii.className = 'mi-character';
-  
-  // Head
-  mii.style.width = '100px';
-  mii.style.height = '120px';
-  mii.style.background = '#FFC425';
-  mii.style.borderRadius = '50% 50% 50% 50% / 60% 60% 40% 40%';
-  mii.style.position = 'relative';
-  mii.style.margin = '10px auto';
-  
-  // Eyes
-  const eyeColor = '#000';
-  const eyeSize = 8;
-  const eyes = [
-    { x: 25, y: 35, size: eyeSize },
-    { x: 75, y: 35, size: eyeSize }
-  ];
-  
-  eyes.forEach((eye, i) => {
-    const eyeEl = document.createElement('div');
-    eyeEl.style.position = 'absolute';
-    eyeEl.style.width = `${eye.size}px`;
-    eyeEl.style.height = `${eye.size}px`;
-    eyeEl.style.background = eyeColor;
-    eyeEl.style.borderRadius = '50%';
-    eyeEl.style.left = `${eye.x}px`;
-    eyeEl.style.top = `${eye.y}px`;
-    mii.appendChild(eyeEl);
-  });
-  
-  // Mouth
-  const mouthY = 70;
-  const mouthEl = document.createElement('div');
-  mouthEl.style.position = 'absolute';
-  mouthEl.style.width = '40px';
-  mouthEl.style.height = '6px';
-  mouthEl.style.background = '#000';
-  mouthEl.style.borderRadius = '2px';
-  mouthEl.style.left = '30px';
-  mouthEl.style.top = `${mouthY}px`;
-  mii.appendChild(mouthEl);
-  
-  // Hair (simple)
-  const hairStyles = {
-    'default': { color: '#000', height: 15 },
-    'spiky': { color: '#000', height: 20 },
-    'short': { color: '#000', height: 10 }
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const screens = ['title-screen', 'lobby-screen', 'creator-screen', 'game-screen', 'matchmaking-screen'];
+  const state = {
+    screen: 'title-screen', sport: 'tennis', mode: 'solo', score: [0, 0], action: 'Topspin',
+    shots: 0, golfStrokes: 0, golfHole: 1, bowlingFrame: 1, bowlingRoll: 0,
+    boxingHealth: 100, opponentHealth: 100, animation: 0, searchStart: 0, searchTimer: null,
+    sound: true, colors: ['#eabf35', '#66a77c', '#568bc4', '#d97565', '#aa83c4', '#e58d55'], color: 0,
+    features: { gender: 0, head: 0, hair: 0, eyes: 0, mouth: 0, glasses: 0 },
+    featureOptions: { gender: ['Classic', 'Sporty', 'Sunny'], head: ['Soft oval', 'Round', 'Long'], hair: ['Side sweep', 'Spikes', 'Curly', 'Short crop'], eyes: ['Bright', 'Sleepy', 'Focused'], mouth: ['Smile', 'Grin', 'Pout'], glasses: ['None', 'Round frames', 'Sport shades'] },
+    lastActionAt: 0, particles: [], pointer: null, raf: 0
   };
-  
-  const hair = hairStyles[creatorState.hairStyle] || hairStyles['default'];
-  const hairEl = document.createElement('div');
-  hairEl.style.position = 'absolute';
-  hairEl.style.width = '100%';
-  hairEl.style.height: `${hair.height}px`;
-  hairEl.style.background = hair.color;
-  hairEl.style.borderRadius: '0 0 50% 50% / 0 0 60% 60%';
-  hairEl.style.marginTop: '-10px';
-  mii.appendChild(hairEl);
-  
-  // Body details based on features
-  // Eyebrows
-  const browY = 25;
-  const browEl = document.createElement('div');
-  browEl.style.position = 'absolute';
-  browEl.style.width = '40px';
-  browEl.style.height = '6px';
-  browEl.style.background = '#000';
-  browEl.style.borderRadius = '2px';
-  browEl.style.left = '20px';
-  browEl.style.top = `${browY}px`;
-  mii.appendChild(browEl);
-  
-  const browEl2 = document.createElement('div');
-  browEl2.style.position = 'absolute';
-  browEl2.style.width = '40px';
-  browEl2.style.height = '6px';
-  browEl2.style.background = '#000';
-  browEl2.style.borderRadius = '2px';
-  browEl2.style.left = '60px';
-  browEl2.style.top = `${browY}px';
-  mii.appendChild(browEl2);
-  
-  // Outfit color
-  mii.style.background = creatorState.outfitColor;
-  
-  miiDiv.appendChild(mii);
-}
+  const sportNames = { tennis: 'Tennis', baseball: 'Baseball', golf: 'Golf', boxing: 'Boxing', bowling: 'Bowling' };
+  const palettes = { tennis: ['#80c679', '#4f9d65'], baseball: ['#dca66d', '#916743'], golf: ['#83c8ad', '#4d987e'], boxing: ['#d88b82', '#9d5a5a'], bowling: ['#7eabd0', '#456e9a'] };
+  const actionSets = {
+    tennis: ['Topspin', 'Slice', 'Lob', 'Power'], baseball: ['Fastball', 'Curveball', 'Splitter', 'Power swing', 'Contact', 'Bunt'],
+    golf: ['Driver', 'Wood', 'Iron', 'Wedge', 'Putter', 'Backspin'], boxing: ['Jab', 'Left hook', 'Right hook', 'Uppercut', 'High block', 'Dodge'],
+    bowling: ['Straight', 'Left hook', 'Right hook', 'Power throw']
+  };
+  const messages = {
+    tennis: ['Clean winner! The crowd loves it.', 'A lovely angle—point yours!', 'Nice timing! Rally continues.', 'Fantastic rally finish!'],
+    baseball: ['Crack! A solid hit into the outfield!', 'The pitch catches the corner!', 'That one is out of here!', 'Great contact—runner advances!'],
+    golf: ['A sweet strike down the fairway.', 'Lovely touch. You’re closer to the pin!', 'The ball settles on the green.', 'A beautiful putt drops!'],
+    boxing: ['A clean hit! Keep up the pressure.', 'Great dodge—now counter!', 'That one landed with a thud!', 'The crowd is on its feet!'],
+    bowling: ['A perfect pocket hit!', 'Pins scatter across the lane!', 'Nice hook into the pocket!', 'Great roll—those pins are wobbling!']
+  };
+  const canvas = $('#game-canvas');
+  const titleCanvas = $('#title-canvas');
+  const ctx = canvas.getContext('2d');
+  const titleCtx = titleCanvas.getContext('2d');
 
-// Initialize event listeners
-function initEventListeners() {
-  // Sport selection
-  document.querySelectorAll('.btn-sport').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sport = btn.dataset.sport;
-      startSport(sport);
+  function showScreen(id) {
+    screens.forEach(name => $('#' + name).classList.toggle('active', name === id));
+    state.screen = id;
+    if (id === 'game-screen') requestAnimationFrame(resizeGameCanvas);
+    if (id === 'title-screen') requestAnimationFrame(resizeTitleCanvas);
+  }
+  function beep(kind = 'click') {
+    if (!state.sound) return;
+    try {
+      const Audio = window.AudioContext || window.webkitAudioContext;
+      if (!Audio) return;
+      const audio = beep.audio || (beep.audio = new Audio());
+      if (audio.state === 'suspended') audio.resume();
+      const oscillator = audio.createOscillator(), gain = audio.createGain();
+      const now = audio.currentTime;
+      const settings = { click: [660, .045, 'sine'], start: [880, .22, 'triangle'], hit: [180, .16, 'triangle'], cheer: [520, .3, 'sine'], select: [440, .07, 'sine'], search: [330, .09, 'sine'] }[kind] || [500, .08, 'sine'];
+      oscillator.type = settings[2]; oscillator.frequency.setValueAtTime(settings[0], now);
+      if (kind === 'start' || kind === 'cheer') oscillator.frequency.exponentialRampToValueAtTime(settings[0] * 1.55, now + settings[1]);
+      gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(kind === 'hit' ? .08 : .045, now + .012); gain.gain.exponentialRampToValueAtTime(.0001, now + settings[1]);
+      oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(now); oscillator.stop(now + settings[1] + .02);
+    } catch (error) { /* Audio is an optional browser capability. */ }
+  }
+  function resizeCanvas(target, context) {
+    const rect = target.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    target.width = Math.round(rect.width * ratio); target.height = Math.round(rect.height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  function resizeGameCanvas() { resizeCanvas(canvas, ctx); drawGame(); }
+  function resizeTitleCanvas() { resizeCanvas(titleCanvas, titleCtx); drawTitle(performance.now()); }
+  function showMessage(text) {
+    $('#game-message').textContent = text;
+    $('#match-status').textContent = text;
+  }
+
+  function startGame(sport, mode = 'solo') {
+    state.sport = sport; state.mode = mode; state.score = [0, 0]; state.shots = 0;
+    state.golfStrokes = 0; state.golfHole = 1; state.bowlingFrame = 1; state.bowlingRoll = 0;
+    state.boxingHealth = 100; state.opponentHealth = 100; state.action = actionSets[sport][0];
+    $('#game-name').textContent = sportNames[sport];
+    $('#game-mode-label').textContent = mode === 'online' ? 'ONLINE · 1 VS 1' : 'SOLO MATCH';
+    $('#score-label').textContent = sport === 'golf' ? 'HOLE 1 · STROKES' : sport === 'bowling' ? 'FRAME 1 · SCORE' : sport === 'boxing' ? 'ROUND 1 · HEALTH' : sport === 'baseball' ? 'INNING 1 · RUNS' : 'POINTS';
+    $('#score-value').innerHTML = '0 <i>—</i> 0';
+    $('#canvas-tip').textContent = sport === 'boxing' ? 'SWIPE TO PUNCH OR DODGE' : sport === 'golf' ? 'AIM, THEN SWIPE UP TO SWING' : sport === 'bowling' ? 'SWIPE UP · CURVE TO ADD SPIN' : 'SWIPE UP TO PLAY';
+    buildControls(); showMessage('Ready when you are.'); showScreen('game-screen');
+    setTimeout(resizeGameCanvas, 60); beep('start');
+  }
+  function buildControls() {
+    const controls = $('#game-controls'); controls.replaceChildren();
+    actionSets[state.sport].forEach((action, index) => {
+      const button = document.createElement('button');
+      button.className = 'action-button' + (action === state.action ? ' selected' : '');
+      button.type = 'button'; button.textContent = action; button.dataset.action = action;
+      button.addEventListener('click', () => {
+        state.action = action;
+        $$('.action-button', controls).forEach(item => item.classList.toggle('selected', item === button));
+        showMessage(`${action} selected — make your move.`); beep('select'); drawGame();
+      });
+      controls.append(button);
     });
-  });
-  
-  // Customize option
-  document.querySelectorAll('.btn-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const option = btn.dataset.option;
-      if (option === 'customize') {
-        showScreen('creator');
-      } else if (option === 'online') {
-        startMatchmaking();
+  }
+  function updateScore() {
+    $('#score-value').innerHTML = `${state.score[0]} <i>—</i> ${state.score[1]}`;
+    if (state.sport === 'golf') $('#score-label').textContent = `HOLE ${state.golfHole} · ${state.golfStrokes} STROKES`;
+    if (state.sport === 'bowling') $('#score-label').textContent = `FRAME ${Math.min(state.bowlingFrame, 10)} · SCORE`;
+    if (state.sport === 'boxing') $('#score-label').textContent = `ROUND ${Math.min(3, Math.floor(state.shots / 5) + 1)} · HEALTH`;
+  }
+  function playAction(swipe = { dx: 0, dy: -100, power: .65 }) {
+    const now = performance.now();
+    if (now - state.lastActionAt < 360) return;
+    state.lastActionAt = now; state.shots++; state.animation = 1;
+    const action = state.action;
+    const roll = Math.random();
+    const power = Math.max(.25, Math.min(1, swipe.power || .5));
+    let message = messages[state.sport][Math.floor(Math.random() * messages[state.sport].length)];
+    if (state.sport === 'tennis') {
+      const won = roll < .72 + power * .2; state.score[won ? 0 : 1]++;
+      message = won ? `${action} winner! ${messages.tennis[Math.floor(Math.random() * messages.tennis.length)]}` : 'Just wide! Your rival takes the point.';
+      if (state.score[0] >= 5 || state.score[1] >= 5) { state.score = [0, 0]; message += ' New set—love all!'; }
+    } else if (state.sport === 'baseball') {
+      const hit = action.toLowerCase().includes('swing') || action === 'Contact' || action === 'Bunt';
+      if (hit) {
+        if (roll < (action === 'Power swing' ? .6 : .78) + power * .12) { state.score[0] += action === 'Power swing' && roll < .36 ? 2 : 1; message = action === 'Bunt' ? 'A neat bunt! Runner advances safely.' : action === 'Power swing' && roll < .36 ? 'HOME RUN! The island crowd goes wild!' : 'Crack! A clean base hit!'; }
+        else message = 'Swing and a miss! Next pitch coming up.';
+      } else message = roll < .78 ? `${action}! A tricky pitch—strike one!` : 'Ball outside. Batter steps back in.';
+      if (state.shots % 6 === 0) message += ' Side retired—change sides!';
+    } else if (state.sport === 'golf') {
+      state.golfStrokes++;
+      if (roll < .24 + power * .34 || action === 'Putter' && roll < .55) {
+        state.score[0]++; message = state.golfStrokes <= 3 ? 'Birdie! The ball drops into the cup!' : 'In the cup! A lovely finish.';
+        state.golfHole = state.golfHole >= 3 ? 1 : state.golfHole + 1; state.golfStrokes = 0;
+      } else message = state.golfStrokes > 2 ? 'On the green—try the putter!' : `${action} shot sails down the fairway.`;
+    } else if (state.sport === 'boxing') {
+      if (action.includes('block') || action === 'Dodge') {
+        state.opponentHealth = Math.min(100, state.opponentHealth + 2); message = action === 'Dodge' ? 'Quick weave! You avoided that punch.' : 'Guard up! Their punch thuds on your gloves.';
+      } else if (roll < .82) {
+        state.opponentHealth = Math.max(0, state.opponentHealth - (action === 'Uppercut' ? 18 : action.includes('hook') ? 14 : 9));
+        state.score[0]++; message = `${action} connects! Opponent stamina ${state.opponentHealth}%.`;
+      } else { state.boxingHealth = Math.max(0, state.boxingHealth - 11); message = `They counter! Your stamina ${state.boxingHealth}%. Block or dodge!`; }
+      if (!state.opponentHealth || !state.boxingHealth || state.shots % 15 === 0) {
+        if (state.opponentHealth < state.boxingHealth) { state.score[0]++; message = 'Knockdown! You win the round!'; }
+        else { state.score[1]++; message = 'Round to your rival—shake it off!'; }
+        state.opponentHealth = state.boxingHealth = 100;
       }
-    });
-  });
-  
-  // Character creator controls
-  document.querySelectorAll('.btn-control').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const feat = btn.dataset.feat;
-      // Cycle through options for each feature
-      switch(feat) {
-        case 'gender':
-          creatorState.gender = creatorState.gender === 'male' ? 'female' : 'male';
-          break;
-        case 'head-shape':
-          creatorState.headShape = getNextHeadShape(creatorState.headShape);
-          break;
-        case 'hair':
-          const hairs = ['default', 'spiky', 'short'];
-          creatorState.hairStyle = hairs[(hairs.indexOf(creatorState.hairStyle) + 1) % hairs.length];
-          break;
-        case 'eyes':
-          creatorState.eyeStyle = getNextEyeStyle(creatorState.eyeStyle);
-          break;
-        case 'nose':
-          creatorState.noseStyle = getNextNoseStyle(creatorState.noseStyle);
-          break;
-        case 'mouth':
-          creatorState.mouthStyle = getNextMouthStyle(creatorState.mouthStyle);
-          break;
-        case 'eyebrows':
-          creatorState.eyebrowStyle = getNextEyebrowStyle(creatorState.eyebrowStyle);
-          break;
-        case 'facial-hair':
-          const fhs = ['none', 'mustache', 'beard'];
-          creatorState.facialHair = fhs[(fhs.indexOf(creatorState.facialHair) + 1) % fhs.length];
-          break;
-        case 'glasses':
-          creatorState.glasses = creatorState.glasses === 'none' ? 'classic' : 'none';
-          break;
+    } else {
+      state.bowlingRoll++;
+      const pins = roll < .18 + power * .3 ? 10 : roll < .42 + power * .2 ? 7 + Math.floor(Math.random() * 3) : 3 + Math.floor(Math.random() * 5);
+      state.score[0] += pins; message = pins === 10 ? 'STRIKE! All ten pins down!' : `${pins} pins down! Set up your spare.`;
+      if (pins === 10 || state.bowlingRoll >= 2) { state.bowlingFrame++; state.bowlingRoll = 0; }
+      if (state.bowlingFrame > 10) { state.bowlingFrame = 1; message += ' New game—roll again!'; }
+    }
+    if (state.mode === 'online' && state.shots % 2 === 0 && Math.random() > .36) state.score[1]++;
+    updateScore(); showMessage(message); beep(state.sport === 'boxing' || state.sport === 'bowling' ? 'hit' : 'cheer');
+    addParticles(swipe); drawGame();
+  }
+
+  function addParticles(swipe) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.max(30, Math.min(rect.width - 30, (swipe.x ?? rect.width * .55)));
+    const y = Math.max(50, Math.min(rect.height - 30, (swipe.y ?? rect.height * .45)));
+    for (let i = 0; i < 13; i++) state.particles.push({ x, y, vx: (Math.random() - .5) * 5, vy: -Math.random() * 4 - 1, life: 1, color: i % 2 ? '#f5dc82' : '#fff' });
+  }
+
+  function roundedRect(c, x, y, w, h, r, color) {
+    c.fillStyle = color; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill();
+  }
+  function drawTitle(time = 0) {
+    const c = titleCtx, w = titleCanvas.clientWidth, h = titleCanvas.clientHeight;
+    if (!w || !h) return;
+    const sky = c.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#74c8df'); sky.addColorStop(.63, '#d2f0d9'); sky.addColorStop(1, '#69b4ae');
+    c.fillStyle = sky; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 6; i++) {
+      const x = ((i * 193 + time * .004) % (w + 180)) - 90, y = 55 + (i % 3) * 55;
+      c.fillStyle = '#ffffff88'; c.beginPath(); c.ellipse(x, y, 42, 12, 0, 0, Math.PI * 2); c.ellipse(x + 24, y - 5, 28, 16, 0, 0, Math.PI * 2); c.ellipse(x + 50, y, 36, 11, 0, 0, Math.PI * 2); c.fill();
+    }
+    const horizon = h * .53;
+    c.fillStyle = '#60b9c3'; c.fillRect(0, horizon, w, h - horizon);
+    for (let i = 0; i < 22; i++) {
+      const x = (i * 97 + time * .012) % w; c.strokeStyle = '#d7f0d877'; c.lineWidth = i % 3 ? 1 : 2;
+      c.beginPath(); c.moveTo(x, horizon + (i % 5) * 10); c.lineTo(x + 35, horizon + (i % 5) * 10); c.stroke();
+    }
+    c.fillStyle = '#94cf97'; c.beginPath(); c.moveTo(0, h * .77); c.quadraticCurveTo(w * .25, h * .63, w * .49, h * .74); c.quadraticCurveTo(w * .76, h * .65, w, h * .73); c.lineTo(w, h); c.lineTo(0, h); c.fill();
+    c.fillStyle = '#63ad79'; c.beginPath(); c.moveTo(0, h * .88); c.quadraticCurveTo(w * .35, h * .69, w * .59, h * .87); c.quadraticCurveTo(w * .8, h * .72, w, h * .81); c.lineTo(w, h); c.lineTo(0, h); c.fill();
+    for (let i = 0; i < 13; i++) {
+      const x = ((i * 137 + 30) % w), y = h * (.71 + (i % 4) * .045), scale = .42 + (i % 4) * .15;
+      c.fillStyle = '#966e4d'; c.fillRect(x - 4 * scale, y, 8 * scale, 34 * scale);
+      c.fillStyle = i % 2 ? '#317d62' : '#398665'; c.beginPath(); c.arc(x, y - 8 * scale, 20 * scale, 0, Math.PI * 2); c.arc(x - 11 * scale, y - 2 * scale, 13 * scale, 0, Math.PI * 2); c.arc(x + 11 * scale, y - 2 * scale, 14 * scale, 0, Math.PI * 2); c.fill();
+    }
+    c.fillStyle = '#e9e9cf'; c.beginPath(); c.moveTo(0, h * .84); c.quadraticCurveTo(w * .24, h * .89, w * .44, h); c.lineTo(0, h); c.fill();
+  }
+  function drawGame() {
+    if (!canvas || !canvas.clientWidth) return;
+    const c = ctx, w = canvas.clientWidth, h = canvas.clientHeight;
+    c.clearRect(0, 0, w, h);
+    const [light, dark] = palettes[state.sport];
+    const sky = c.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#9ed3df'); sky.addColorStop(.46, '#d5ebdf'); sky.addColorStop(.47, light); sky.addColorStop(1, dark);
+    c.fillStyle = sky; c.fillRect(0, 0, w, h);
+    // Island horizon and soft layered clouds
+    c.fillStyle = '#ffffff99';
+    for (let i = 0; i < 4; i++) { const x = w * (.12 + i * .24); c.beginPath(); c.ellipse(x, h * (.12 + i % 2 * .05), 35, 9, 0, 0, Math.PI * 2); c.ellipse(x + 18, h * .11, 22, 12, 0, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#58a884'; c.beginPath(); c.moveTo(0, h * .46); c.quadraticCurveTo(w * .24, h * .32, w * .5, h * .46); c.quadraticCurveTo(w * .73, h * .35, w, h * .46); c.lineTo(w, h * .53); c.lineTo(0, h * .53); c.fill();
+    if (state.sport === 'tennis') renderTennis(c, w, h);
+    if (state.sport === 'baseball') renderBaseball(c, w, h);
+    if (state.sport === 'golf') renderGolf(c, w, h);
+    if (state.sport === 'boxing') renderBoxing(c, w, h);
+    if (state.sport === 'bowling') renderBowling(c, w, h);
+    // Player silhouettes, rendered as friendly floating-hand characters.
+    if (state.sport !== 'bowling') { drawPlayer(c, w * .19, h * .68, .68, '#f3d9ac', state.sport === 'boxing' ? '#e5c240' : '#e5c240'); drawPlayer(c, w * .82, h * .5, .52, '#d4a47b', '#ef8376'); }
+    c.fillStyle = '#ffffffcc'; c.font = '10px monospace'; c.textAlign = 'left'; c.fillText(state.sport === 'golf' ? `HOLE ${state.golfHole}  ·  PAR 3` : state.sport === 'bowling' ? `FRAME ${state.bowlingFrame}  ·  ${state.action.toUpperCase()}` : `${state.action.toUpperCase()}  ·  ISLAND CLUB`, 16, 25);
+    state.particles = state.particles.filter(p => p.life > 0);
+    state.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .09; p.life -= .035; c.globalAlpha = p.life; c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, 3 * p.life + 1, 0, Math.PI * 2); c.fill(); }); c.globalAlpha = 1;
+  }
+  function drawPlayer(c, x, y, s, skin, shirt) {
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.fillStyle = '#31594e44'; c.beginPath(); c.ellipse(0, 42, 38, 9, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#3a6374'; c.fillRect(-18, 19, 13, 25); c.fillRect(5, 19, 13, 25);
+    c.fillStyle = shirt; c.beginPath(); c.moveTo(-26, -8); c.lineTo(26, -8); c.lineTo(31, 26); c.lineTo(-31, 26); c.fill();
+    c.fillStyle = skin; c.beginPath(); c.arc(0, -30, 25, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#594638'; c.beginPath(); c.arc(0, -38, 25, Math.PI, Math.PI * 2); c.fill();
+    c.fillStyle = '#243c42'; c.beginPath(); c.arc(-8, -29, 2.2, 0, Math.PI * 2); c.arc(8, -29, 2.2, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#9e554b'; c.lineWidth = 2; c.beginPath(); c.arc(0, -21, 6, .2, Math.PI - .2); c.stroke();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(-37, 6, 11, 0, Math.PI * 2); c.arc(37, 6, 11, 0, Math.PI * 2); c.fill(); c.restore();
+  }
+  function renderTennis(c, w, h) {
+    const ground = h * .53; c.fillStyle = '#64b77a'; c.fillRect(0, ground, w, h - ground);
+    c.fillStyle = '#4d9d6c'; c.beginPath(); c.moveTo(w * .2, ground); c.lineTo(w * .8, ground); c.lineTo(w * .98, h); c.lineTo(w * .02, h); c.fill();
+    c.strokeStyle = '#e9f4d8'; c.lineWidth = 2; c.beginPath(); c.moveTo(w * .2, ground + 8); c.lineTo(w * .8, ground + 8); c.lineTo(w * .96, h - 4); c.lineTo(w * .04, h - 4); c.stroke();
+    c.beginPath(); c.moveTo(w * .5, ground + 7); c.lineTo(w * .5, h - 2); c.moveTo(w * .34, ground + 7); c.lineTo(w * .27, h - 2); c.moveTo(w * .66, ground + 7); c.lineTo(w * .73, h - 2); c.stroke();
+    c.strokeStyle = '#f3f1df'; c.lineWidth = 3; c.beginPath(); c.moveTo(w * .38, h * .53); c.lineTo(w * .62, h * .53); c.stroke(); c.strokeStyle = '#ffffff99'; c.lineWidth = 1; for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(w * .39 + i * w * .02, h * .53); c.lineTo(w * .39 + i * w * .02, h * .57); c.stroke(); }
+    c.fillStyle = '#e8df71'; c.beginPath(); c.arc(w * (.5 + Math.sin(state.shots) * .12), h * (.45 + state.shots % 2 * .13), 7, 0, Math.PI * 2); c.fill();
+  }
+  function renderBaseball(c, w, h) {
+    c.fillStyle = '#7dbe78'; c.fillRect(0, h * .48, w, h * .52);
+    c.fillStyle = '#c99b69'; c.beginPath(); c.moveTo(w * .5, h * .5); c.lineTo(w * .91, h * .85); c.lineTo(w * .5, h * 1.08); c.lineTo(w * .09, h * .85); c.closePath(); c.fill();
+    c.fillStyle = '#73b971'; c.beginPath(); c.moveTo(w * .5, h * .5); c.lineTo(w * .83, h * .78); c.lineTo(w * .5, h * .98); c.lineTo(w * .17, h * .78); c.fill();
+    c.strokeStyle = '#fff1d2'; c.lineWidth = 3; c.beginPath(); c.moveTo(w * .5, h * .92); c.lineTo(w * .12, h * .84); c.lineTo(w * .5, h * .5); c.lineTo(w * .88, h * .84); c.lineTo(w * .5, h * .92); c.stroke();
+    [[.5,.5],[.12,.84],[.88,.84]].forEach(([x,y]) => { c.fillStyle='#fff5db'; c.save();c.translate(w*x,h*y);c.rotate(Math.PI/4);c.fillRect(-5,-5,10,10);c.restore(); });
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(w * .5, h * (.68 - (state.shots % 3) * .025), 9, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#c96c6c'; c.lineWidth = 1; c.beginPath(); c.arc(w * .5, h * .68, 5, -.8, .8); c.stroke();
+  }
+  function renderGolf(c, w, h) {
+    c.fillStyle = '#80c997'; c.fillRect(0, h * .48, w, h * .52);
+    c.fillStyle = '#519d7a'; c.beginPath(); c.moveTo(w * .2, h); c.quadraticCurveTo(w * .52, h * .52, w * .57, h * .61); c.quadraticCurveTo(w * .73, h * .56, w * .94, h * .49); c.lineTo(w, h); c.fill();
+    c.fillStyle = '#b7dfac'; c.beginPath(); c.ellipse(w * .73, h * .58, w * .18, h * .09, -.12, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#f5eedb'; c.beginPath(); c.ellipse(w * .73, h * .58, 12, 5, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); c.moveTo(w * .73, h * .58); c.lineTo(w * .73, h * .36); c.stroke();
+    c.fillStyle = '#df7770'; c.beginPath(); c.moveTo(w * .73, h * .36); c.lineTo(w * .79, h * .39); c.lineTo(w * .73, h * .42); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(w * (.2 + Math.min(.45, state.golfStrokes * .1)), h * (.84 - Math.min(.22, state.golfStrokes * .06)), 6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#6e9a72'; c.font = '12px monospace'; c.fillText('WIND  ↗  4 mph', w - 130, 26);
+  }
+  function renderBoxing(c, w, h) {
+    c.fillStyle = '#d4b68f'; c.fillRect(0, h * .49, w, h * .51);
+    c.fillStyle = '#f0d5aa'; c.beginPath(); c.moveTo(w * .17, h * .54); c.lineTo(w * .83, h * .54); c.lineTo(w * .98, h); c.lineTo(w * .02, h); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 3; [.56,.63,.7].forEach(y=>{c.beginPath();c.moveTo(w*.08,h*y);c.lineTo(w*.92,h*y);c.stroke();});
+    c.fillStyle = '#d58a77'; c.fillRect(0, h * .52, w, 7); c.fillRect(0, h * .65, w, 5);
+    for (let i=0;i<8;i++){c.fillStyle=i%2?'#f4e8d0':'#d7e8d9';c.beginPath();c.arc(i*w/7,h*.37+(i%3)*7,18,0,Math.PI*2);c.fill();}
+    c.fillStyle = '#c6554b'; c.font = `bold ${Math.max(20,w*.035)}px sans-serif`; c.textAlign='center';c.fillText(`${state.boxingHealth}%`,w*.22,h*.2);c.fillStyle='#517aa2';c.fillText(`${state.opponentHealth}%`,w*.78,h*.2);c.textAlign='left';
+  }
+  function renderBowling(c, w, h) {
+    c.fillStyle = '#bbd7df'; c.fillRect(0,h*.48,w,h*.52);
+    c.fillStyle = '#a57650'; c.beginPath(); c.moveTo(w*.22,h*.48);c.lineTo(w*.78,h*.48);c.lineTo(w*.95,h);c.lineTo(w*.05,h);c.fill();
+    c.fillStyle = '#d8b27b'; c.beginPath();c.moveTo(w*.26,h*.5);c.lineTo(w*.74,h*.5);c.lineTo(w*.88,h);c.lineTo(w*.12,h);c.fill();
+    c.strokeStyle='#f0d99d';c.lineWidth=2;[.34,.66].forEach(x=>{c.beginPath();c.moveTo(w*x,h*.5);c.lineTo(w*(.5+(x-.5)*1.5),h);c.stroke();});
+    for(let i=0;i<5;i++){const x=w*.5+(i-2)*12,y=h*.49+(Math.abs(i-2))*9;c.fillStyle='#fff';c.beginPath();c.ellipse(x,y,7,11,0,0,Math.PI*2);c.fill();c.fillStyle='#d66c66';c.fillRect(x-6,y-3,12,2);}
+    c.fillStyle='#365e93';c.beginPath();c.arc(w*(.5+Math.sin(state.shots*.7)*.09),h*.89,16,0,Math.PI*2);c.fill();c.fillStyle='#fff';c.beginPath();[-4,4].forEach(x=>c.arc(w*(.5+Math.sin(state.shots*.7)*.09)+x,h*.89-4,2,0,Math.PI*2));c.fill();
+  }
+
+  function updateMii() {
+    const mii = $('#mii'), skin = ['#f5c990', '#f1b984', '#e7aa7a'][state.features.gender];
+    const heads = ['48% 48% 44% 44%', '50%', '45% 45% 48% 48%'];
+    mii.style.setProperty('--skin', skin); mii.style.setProperty('--shirt', state.colors[state.color]);
+    mii.style.setProperty('--head-shape', heads[state.features.head]);
+    const hairStyles = [
+      'polygon(0 60%,8% 18%,26% 5%,42% 16%,61% 0,87% 14%,100% 49%,93% 100%,74% 69%,51% 76%,32% 65%,12% 89%)',
+      'polygon(0 52%,8% 22%,13% 0,28% 22%,43% 0,54% 17%,72% 0,82% 25%,100% 34%,95% 100%,70% 70%,40% 74%,15% 92%)',
+      'polygon(0 42%,10% 12%,24% 17%,35% 0,50% 12%,66% 0,78% 18%,94% 10%,100% 50%,90% 100%,72% 72%,48% 80%,26% 72%,8% 96%)',
+      'polygon(0 55%,12% 15%,31% 5%,51% 13%,73% 4%,94% 21%,100% 55%,82% 83%,64% 68%,38% 72%,17% 88%)'
+    ];
+    $('.mii-hair').style.clipPath = hairStyles[state.features.hair];
+    $('.mii-glasses').style.display = state.features.glasses ? 'block' : 'none';
+    $('.mii-mouth').style.borderRadius = state.features.mouth === 1 ? '0 0 70% 70%' : state.features.mouth === 2 ? '50%' : '0 0 50% 50%';
+    $('.mii-mouth').style.borderBottomWidth = state.features.mouth === 2 ? '0' : '3px';
+    $$('.mii-eye').forEach(eye => { eye.style.height = state.features.eyes === 1 ? '8px' : '14px'; eye.style.borderRadius = state.features.eyes === 2 ? '2px' : '50%'; });
+    $('.mii-body').style.background = state.colors[state.color];
+  }
+  function updateProfile() {
+    const name = ($('#player-name').value.trim() || 'PLAYER 1').toUpperCase();
+    $('#profile-name').textContent = name;
+    $('#profile-avatar').style.background = state.colors[state.color];
+    $('#profile-avatar').textContent = name.slice(0, 1);
+  }
+  function startMatchmaking() {
+    const sport = $('#online-sport').value;
+    state.searchStart = Date.now(); showScreen('matchmaking-screen'); beep('search');
+    clearInterval(state.searchTimer);
+    state.searchTimer = setInterval(() => {
+      const seconds = Math.floor((Date.now() - state.searchStart) / 1000);
+      $('#search-time').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      if (seconds === 10) {
+        $('#cancel-match').textContent = 'MATCH FOUND · ENTERING'; beep('cheer');
+        setTimeout(() => { if (state.screen === 'matchmaking-screen') { clearInterval(state.searchTimer); $('#cancel-match').textContent = 'CANCEL SEARCH'; startGame($('#online-sport').value || sport, 'online'); } }, 1000);
       }
-      updateMiiDisplay();
-    });
+    }, 250);
+    $('#search-time').textContent = '00:00'; $('#cancel-match').textContent = 'CANCEL SEARCH';
+  }
+
+  $('#start-button').addEventListener('click', () => { beep('start'); showScreen('lobby-screen'); });
+  $('#title-screen').addEventListener('click', event => { if (event.target === $('#title-screen') || event.target === titleCanvas) { beep('start'); showScreen('lobby-screen'); } });
+  $$('.sport-card').forEach(card => card.addEventListener('click', () => { beep('click'); startGame(card.dataset.sport); }));
+  $('#creator-button').addEventListener('click', () => { beep('click'); showScreen('creator-screen'); });
+  $('#profile-button').addEventListener('click', () => { beep('click'); showScreen('creator-screen'); });
+  $('#online-button').addEventListener('click', () => { beep('click'); startMatchmaking(); });
+  $('#cancel-match').addEventListener('click', () => { clearInterval(state.searchTimer); beep('click'); showScreen('lobby-screen'); });
+  $('#match-format').addEventListener('change', event => { if (state.screen === 'matchmaking-screen') $('#game-mode-label').textContent = `ONLINE · ${event.target.value.toUpperCase()}`; });
+  $$('[data-back]').forEach(button => button.addEventListener('click', () => { clearInterval(state.searchTimer); beep('click'); showScreen('lobby-screen'); updateProfile(); }));
+  $$('.feature-row').forEach(button => button.addEventListener('click', () => {
+    const key = button.dataset.feature, options = state.featureOptions[key];
+    state.features[key] = (state.features[key] + 1) % options.length;
+    $(`#value-${key}`).textContent = options[state.features[key]]; updateMii(); beep('select');
+  }));
+  const swatches = $('#swatches');
+  state.colors.forEach((color, index) => {
+    const swatch = document.createElement('button'); swatch.type = 'button'; swatch.className = 'swatch' + (index === state.color ? ' selected' : '');
+    swatch.style.background = color; swatch.setAttribute('aria-label', `Choose color ${index + 1}`);
+    swatch.addEventListener('click', () => { state.color = index; $$('.swatch', swatches).forEach((item, i) => item.classList.toggle('selected', i === index)); updateMii(); updateProfile(); beep('select'); });
+    swatches.append(swatch);
   });
-  
-  // Keyboard controls for swipe
-  document.addEventListener('keydown', handleKeyDown);
-  document.addEventListener('touchstart', handleTouchStart, { passive: false });
-  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-  document.addEventListener('touchend', handleTouchEnd);
-}
-
-// Handle key down for desktop
-function handleKeyDown(e) {
-  // Simple key-based controls for testing
-  if (gameState.currentSport && !gameState.isMatchmaking) {
-    switch(e.key) {
-      case ' ':
-        e.preventDefault();
-        performSwing();
-        break;
-      case 'ArrowLeft':
-        dodgeLeft();
-        break;
-      case 'ArrowRight':
-        dodgeRight();
-        break;
-    }
-  }
-}
-
-// Handle touch start
-let touchStartX = 0;
-let touchStartY = 0;
-
-function handleTouchStart(e) {
-  if (gameState.isMatchmaking) return;
-  touchStartX = e.changedTouches[0].clientX;
-  touchStartY = e.changedTouches[0].clientY;
-}
-
-function handleTouchMove(e) {
-  e.preventDefault();
-}
-
-function handleTouchEnd(e) {
-  if (gameState.isMatchmaking) return;
-  const touchEndX = e.changedTouches[0].clientX;
-  const touchEndY = e.changedTouches[0].clientY;
-  
-  const diffX = touchEndX - touchStartX;
-  const diffY = touchEndY - touchStartY;
-  
-  // Determine swipe direction
-  if (Math.abs(diffY) > Math.abs(diffX)) {
-    // Vertical swipe
-    if (diffY > 30) {
-      performSwing();
-    } else if (diffY < -30) {
-      // Down swipe - maybe drop ball/stop
-    }
-  } else {
-    // Horizontal swipe
-    if (Math.abs(diffX) > 30) {
-      if (diffX > 30) dodgeRight();
-      else dodgeLeft();
-    }
-  }
-}
-
-// Start a sport
-function startSport(sportName) {
-  const sportData = sports[sportName];
-  if (!sportData) return;
-  
-  gameState.currentSport = sportName;
-  gameState.currentMode = 'single'; // Default to single player
-  gameState.score = { p1: 0, p2: 0 };
-  
-  // Update UI
-  document.getElementById('sport-name').textContent = sportData.name;
-  document.getElementById('controls-instruction').innerHTML = `
-    <p>${sportData.controls}</p>
-    <p>Press Space or swipe up to act</p>
-  `;
-  
-  // Initialize the sport
-  if (sportData.init) {
-    sportData.init();
-  }
-  
-  // Render the game area
-  if (sportData.render) {
-    sportData.render();
-  }
-  
-  // Create HUD buttons for interactive shot-style controls
-  createHUD(sportName);
-  
-  showScreen('sport-screen');
-}
-
-// Start matchmaking
-function startMatchmaking() {
-  gameState.isMatchmaking = true;
-  gameState.matchmakingTime = 0;
-  
-  document.getElementById('matchmaking-timer').classList.remove('hidden');
-  document.getElementById('matchmaking-timer').textContent = 'Loading... Matchmaking';
-  
-  // Start timer update
-  gameState.matchmakingInterval = setInterval(() => {
-    gameState.matchmakingTime++;
-    const mins = Math.floor(gameState.matchmakingTime / 60);
-    const secs = gameState.matchmakingTime % 60;
-    const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    document.getElementById('matchmaking-timer').textContent = `Looking for match... ${timeStr}`;
-    
-    // Simulate finding a match after 3-10 seconds
-    if (gameState.matchmakingTime > (5 + Math.random() * 5)) {
-      clearInterval(gameState.matchmakingInterval);
-      gameState.isMatchmaking = false;
-      document.getElementById('matchmaking-timer').classList.add('hidden');
-      startSport('tennis'); // Default to tennis for matchmaking demo
-    }
-  }, 1000);
-}
-
-// Reset game state
-function resetGame() {
-  gameState.currentSport = null;
-  gameState.currentMode = 'single';
-  gameState.score = { p1: 0, p2: 0 };
-  document.getElementById('matchmaking-timer').classList.add('hidden');
-  clearInterval(gameState.matchmakingInterval);
-  gameState.isMatchmaking = false;
-}
-
-// ============ Sport Implementations ============
-
-// Tennis
-function initTennis() {
-  // Create court
-  const gameArea = document.getElementById('game-area');
-  gameArea.innerHTML = `
-    <div class="court" id="court"></div>
-    <div class="net" id="net"></div>
-    <div class="ball" id="tennis-ball"></div>
-  `;
-  
-  // Player positions
-  createPlayerPaddles();
-  
-  // Ball physics
-  gameState.tennis = {
-    ball: { x: 400, y: 200, vx: 0, vy: 0, radius: 10 },
-    player1: { x: 50, y: 200, width: 30, height: 60, score: 0 },
-    player2: { x: 770, y: 200, width: 30, height: 60, score: 0 },
-    swingActive: false,
-    swingDirection: 1 // 1 = right, -1 = left
-  };
-  
-  // Initialize ball
-  const ball = document.getElementById('tennis-ball');
-  ball.style.left = `${gameState.tennis.ball.x}px`;
-  ball.style.top = `${gameState.tennis.ball.y}px`;
-}
-
-function createPlayerPaddles() {
-  const gameArea = document.getElementById('game-area');
-  
-  // Player 1 paddle (left)
-  const paddle1 = document.createElement('div');
-  paddle1.className = 'paddle player1';
-  paddle1.style.left = '20px';
-  paddle1.style.top = '170px';
-  paddle1.innerHTML = '<div class="mi-small"></div>';
-  gameArea.appendChild(paddle1);
-  
-  // Player 2 paddle (right)
-  const paddle2 = document.createElement('div');
-  paddle2.className = 'paddle player2';
-  paddle2.style.left = '770px';
-  paddle2.style.top = '170px';
-  paddle2.innerHTML = '<div class="mi-small"></div>';
-  gameArea.appendChild(paddle2);
-}
-
-function updateTennis() {
-  // Update ball position
-  const ball = gameState.tennis.ball;
-  ball.x += ball.vx;
-  ball.y += ball.vy;
-  
-  // Apply gravity/friction
-  ball.vy += 0.5;
-  ball.vx *= 0.99;
-  
-  // Boundary checks
-  if (ball.y > 380 || ball.y < 20) {
-    ball.vy = -ball.vy * 0.8;
-  }
-  
-  // Update DOM
-  const ballEl = document.getElementById('tennis-ball');
-  ballEl.style.left = `${ball.x - ball.radius}px`;
-  ballEl.style.top = `${ball.y - ball.radius}px`;
-  
-  // Swing logic
-  if (gameState.tennis.swingActive) {
-    // Apply swing force
-    ball.vx += gameState.tennis.swingDirection * 15;
-    ball.vy -= 10;
-    gameState.tennis.swingActive = false;
-  }
-}
-
-function renderTennis() {
-  updateTennis();
-  requestAnimationFrame(renderTennis);
-}
-
-// Start swing
-function performSwing() {
-  if (!gameState.currentSport || gameState.tennis.swingActive) return;
-  gameState.tennis.swingActive = true;
-  
-  // In a real game, swing power would depend on swipe speed
-  // For now, just apply basic swing
-  if (gameState.currentSport === 'tennis') {
-    gameState.tennis.swingDirection = 1; // Right-handed swing
-  }
-}
-
-// Dodge functions
-function dodgeLeft() {
-  if (gameState.currentSport !== 'boxing') return;
-  // Implement dodge logic
-  console.log('Dodge left');
-}
-
-function dodgeRight() {
-  if (gameState.currentSport !== 'boxing') return;
-  // Implement dodge logic
-  console.log('Dodge right');
-}
-
-// Baseball
-function initBaseball() {
-  const gameArea = document.getElementById('game-area');
-  gameArea.innerHTML = `
-    <div class="diamond" id="baseball-diamond"></div>
-    <div class="pitcher" id="pitcher"></div>
-    <div class="batter" id="batter"></div>
-    <div class="ball" id="baseball"></div>
-  `;
-  
-  gameState.baseball = {
-    pitchType: 'fastball',
-    ball: { x: 100, y: 400, vx: 15, vy: 0 },
-    swingActive: false,
-    inning: 1,
-    strikes: 0,
-    balls: 0
-  };
-}
-
-function updateBaseball() {
-  // Update ball position
-  const b = gameState.baseball;
-  b.ball.x += b.ball.vx;
-  b.ball.y += b.ball.vy;
-  
-  // Pitch logic
-  if (b.pitchType === 'fastball') {
-    b.ball.vx = 15;
-  }
-  
-  // Update DOM
-  const ballEl = document.getElementById('baseball');
-  ballEl.style.left = `${b.ball.x}px`;
-  ballEl.style.top = `${b.ball.y}px`;
-}
-
-function renderBaseball() {
-  updateBaseball();
-  requestAnimationFrame(renderBaseball);
-}
-
-// Golf
-function initGolf() {
-  const gameArea = document.getElementById('game-area');
-  gameArea.innerHTML = `
-    <div class="golf-course" id="golf-course"></div>
-    <div class.tee" id="tee"></div>
-    <div class="ball" id="golf-ball"></div>
-    <div class="hole" id="hole"></div>
-  `;
-  
-  gameState.golf = {
-    clubType: 'driver',
-    ball: { x: 50, y: 500, vx: 0, vy: 0 },
-    aimAngle: 0,
-    power: 0,
-    wind: 0,
-    holePosition: { x: 750, y: 100 }
-  };
-  
-  // Initialize course elements
-  const ballEl = document.getElementById('golf-ball');
-  ballEl.style.left = `${gameState.golf.ball.x}px`;
-  ballEl.style.top = `${gameState.golf.ball.y}px`;
-}
-
-function updateGolf() {
-  const g = gameState.golf;
-  if (g.power > 0) {
-    g.ball.vx = Math.cos(g.aimAngle) * g.power * 0.1;
-    g.ball.vy = Math.sin(g.aimAngle) * g.power * 0.1;
-    g.power *= 0.99; // Decay power
-    
-    // Apply wind
-    g.ball.vx += g.wind * 0.5;
-  }
-  
-  g.ball.x += g.ball.vx;
-  g.ball.y += g.ball.vy;
-  
-  // Simple friction
-  g.ball.vx *= 0.999;
-  g.ball.vy *= 0.999;
-  
-  // Update DOM
-  const ballEl = document.getElementById('golf-ball');
-  ballEl.style.left = `${g.ball.x}px`;
-  ballEl.style.top = `${g.ball.y}px`;
-  
-  // Check if in hole
-  const dx = g.ball.x - g.holePosition.x;
-  const dy = g.ball.y - g.holePosition.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance < 30) {
-    // Hole in one!
-    console.log('Hole in one!');
-  }
-}
-
-function renderGolf() {
-  updateGolf();
-  requestAnimationFrame(renderGolf);
-}
-
-// Boxing
-function initBoxing() {
-  const gameArea = document.getElementById('game-area');
-  gameArea.innerHTML = `
-    <div class="boxing-ring" id="boxing-ring"></div>
-    <div class="boxer player1" id="boxer1"></div>
-    <div class="boxer player2" id="boxer2"></div>
-    <div class="glove" id="glove1"></div>
-    <div class="glove" id="glove2"></div>
-  `;
-  
-  gameState.boxing = {
-    round: 1,
-    time: 0,
-    fighter1: { x: 200, y: 300, health: 100 },
-    fighter2: { x: 600, y: 300, health: 100 },
-    punchCooldown: 0
-  };
-}
-
-function updateBoxing() {
-  const b = gameState.boxing;
-  b.time++;
-  
-  // Round timing - 3 rounds
-  if (b.time > 180) { // 3 seconds per round simplified
-    b.round++;
-    b.time = 0;
-    if (b.round > 3) {
-      // End match - determine winner
-      showResult('Boxing Match Complete');
-      return;
-    }
-  }
-  
-  // Update positions
-  document.getElementById('boxer1').style.left = `${b.fighter1.x}px`;
-  document.getElementById('boxer2').style.left = `${b.fighter2.x}px`;
-  
-  // Punch cooldown
-  if (b.punchCooldown > 0) b.punchCooldown--;
-}
-
-function renderBoxing() {
-  updateBoxing();
-  requestAnimationFrame(renderBoxing);
-}
-
-// Start punch
-function throwPunch(direction) {
-  if (!gameState.currentSport || gameState.currentSport !== 'boxing') return;
-  if (gameState.boxing.punchCooldown > 0) return;
-  
-  gameState.boxing.punchCooldown = 30; // Cooldown frames
-  
-  // Determine punch type based on timing
-  const punchType = direction === 'up' ? 'uppercut' : 'jab';
-  console.log(`Throw ${punchType}`);
-}
-
-// Bowling
-function initBowling() {
-  const gameArea = document.getElementById('game-area');
-  gameArea.innerHTML = `
-    <div class="lanes" id="lanes"></div>
-    <div class="player" id="player1"></div>
-    <div class="ball" id="bowling-ball"></div>
-    <div class="pins" id="pins"></div>
-  `;
-  
-  gameState.bowling = {
-    ball: { x: 200, y: 500, vx: 0, vy: 0, spin: 0 },
-    position: 'center',
-    power: 0
-  };
-  
-  // Initialize pins
-  createPins();
-}
-
-function createPins() {
-  const gameArea = document.getElementById('game-area');
-  const pinsContainer = document.getElementById('pins');
-  
-  // Create 10 pins in classic triangle formation
-  const pinPositions = [
-    { x: 400, y: 100 },
-    { x: 350, y: 160 },
-    { x: 450, y: 160 },
-    { x: 300, y: 220 },
-    { x: 400, y: 220 },
-    { x: 500, y: 220 },
-    { x: 250, y: 280 },
-    { x: 350, y: 280 },
-    { x: 450, y: 280 },
-    { x: 375, y: 340 }
-  ];
-  
-  pinPositions.forEach((pos, i) => {
-    const pin = document.createElement('div');
-    pin.className = 'pin';
-    pin.style.left = `${pos.x}px`;
-    pin.style.top = `${pos.y}px`;
-    pin.dataset.index = i;
-    pinsContainer.appendChild(pin);
+  $('#player-name').addEventListener('input', updateProfile);
+  $('#sound-toggle').addEventListener('click', event => {
+    state.sound = !state.sound; event.currentTarget.innerHTML = `${state.sound ? '♫' : '♪'} <span>Sound ${state.sound ? 'on' : 'off'}</span>`;
+    if (state.sound) beep('select');
   });
-}
-
-function updateBowling() {
-  const b = gameState.bowling;
-  b.ball.y += b.vy;
-  b.ball.x += b.vx;
-  
-  // Apply spin effect
-  if (b.spin !== 0) {
-    // Simple spin physics - ball curves
-    b.vx += Math.sin(b.spin * 0.1) * 0.5;
-  }
-  
-  // Friction
-  b.vx *= 0.998;
-  b.vy *= 0.998;
-  
-  // Update DOM
-  const ballEl = document.getElementById('bowling-ball');
-  ballEl.style.left = `${b.ball.x}px`;
-  ballEl.style.top = `${b.ball.y}px`;
-  
-  // Check pin collisions
-  checkPinCollisions();
-}
-
-function renderBowling() {
-  updateBowling();
-  requestAnimationFrame(renderBowling);
-}
-
-function rollBall() {
-  if (gameState.currentSport !== 'bowling') return;
-  
-  const b = gameState.bowling;
-  b.vy = -15; // Ball moves up the lane
-  b.vx = 5; // Slight forward velocity
-  b.spin = -30; // Hook spin
-}
-
-// ============ Utility Functions ============
-
-function getNextHeadShape(current) {
-  const shapes = ['default', 'round', 'oval', 'square'];
-  return shapes[(shapes.indexOf(current) + 1) % shapes.length];
-}
-
-function getNextEyeStyle(current) {
-  const eyes = ['default', 'wide', 'narrow', 'closed'];
-  return eyes[(eyes.indexOf(current) + 1) % eyes.length];
-}
-
-function getNextNoseStyle(current) {
-  const noses = ['default', 'small', 'large', 'button'];
-  return noses[(noses.indexOf(current) + 1) % noses.length];
-}
-
-function getNextMouthStyle(current) {
-  const mouths = ['default', 'smile', 'frown', 'open'];
-  return mouths[(mouths.indexOf(current) + 1) % mouths.length];
-}
-
-function getNextEyebrowStyle(current) {
-  const brows = ['default', 'angry', 'natural', 'raised'];
-  return brows[(brows.indexOf(current) + 1) % brows.length];
-}
-
-// Sound effects pool (references, actual files would be loaded)
-const soundEffects = {
-  // Boxing sounds
-  leftHookSwish: new Audio(),
-  rightHookSwish: new Audio(),
-  uppercutChime: new Audio(),
-  jabPop: new Audio(),
-  blockThud: new Audio(),
-  dodgeWhoosh: new Audio(),
-  
-  // Tennis sounds
-  topspinZip: new Audio(),
-  backspinThud: new Audio(),
-  lobWhoosh: new Audio(),
-  flatPowerPop: new Audio(),
-  
-  // Baseball sounds
-  fastballPop: new Audio(),
-  curveWhoosh: new Audio(),
-  screwballSnap: new Audio(),
-  splitterDrop: new Audio(),
-  powerSwingSwish: new Audio(),
-  contactSwingSwish: new Audio(),
-  buntTap: new Audio(),
-  
-  // Golf sounds
-  clubClink: new Audio(),
-  fullSwingSwish: new Audio(),
-  approachSwish: new Audio(),
-  chipSwish: new Audio(),
-  backspinClick: new Audio(),
-  
-  // Bowling sounds
-  straightClick: new Audio(),
-  hookWhir: new Audio(),
-  powerThrowSwish: new Audio(),
-  loftToggleClick: new Audio()
-};
-
-// Initialize sound effects audio sources (muted references for UI feedback)
-Object.values(soundEffects).forEach(sfx => {
-  sfx.muted = true;
-});
-
-// HUD container creation
-function createHUD(sport) {
-  const sportScreen = document.getElementById('sport-screen');
-  
-  // Remove existing HUD if present
-  const existingHUD = sportScreen.querySelector('.hud');
-  if (existingHUD) existingHUD.remove();
-  
-  const hud = document.createElement('div');
-  hud.className = 'hud';
-  hud.style.position = 'absolute';
-  hud.style.bottom: '0';
-  hud.style.width: '100%';
-  hud.style.padding: '15px';
-  hud.style.background: 'rgba(26, 26, 26, 0.8)';
-  hud.style.backdropFilter: 'blur(10px)';
-  hud.style.borderTop: '2px solid var(--wii-blue)';
-  hud.style.display: 'flex';
-  hud.style.gap: '10px';
-  hud.style.justifyContent: 'center';
-  hud.style.flexWrap: 'wrap';
-  hud.style.zIndex: '100';
-  
-  // Sport-specific HUD buttons
-  switch(sport) {
-    case 'boxing':
-      hud.innerHTML = `
-        <button class="hud-btn box-btn" data-action="leftHook">Left Hook</button>
-        <button class="hud-btn box-btn" data-action="rightHook">Right Hook</button>
-        <button class="hud-btn box-btn" data-action="uppercut">Uppercut</button>
-        <button class="hud-btn box-btn" data-action="jab">Jab</button>
-        <button class="hud-btn box-btn" data-action="blockHigh">High Block</button>
-        <button class="hud-btn box-btn" data-action="blockLow">Low Block</button>
-        <button class="hud-btn box-btn" data-action="dodgeLeft">Dodge Left</button>
-        <button class="hud-btn box-btn" data-action="dodgeRight">Dodge Right</button>
-      `;
-      break;
-      
-    case 'tennis':
-      hud.innerHTML = `
-        <button class="hud-btn tennis-btn" data-action="topspin">Topspin</button>
-        <button class="hud-btn tennis-btn" data-action="backspin">Backspin/Slice</button>
-        <button class="hud-btn tennis-btn" data-action="lob">Lob</button>
-        <button class="hud-btn tennis-btn" data-action="flatPower">Flat Power</button>
-      `;
-      break;
-      
-    case 'baseball':
-      hud.innerHTML = `
-        <div class="hud-pitching">
-          <button class="hud-btn baseball-btn" data-action="fastball">Fastball</button>
-          <button class="hud-btn baseball-btn" data-action="curve">Curveball</button>
-          <button class="hud-btn baseball-btn" data-action="screwball">Screwball</button>
-          <button class="hud-btn baseball-btn" data-action="splitter">Splitter</button>
-        </div>
-        <div class="hud-batting">
-          <button class="hud-btn baseball-btn" data-action="powerSwing">Power Swing</button>
-          <button class="hud-btn baseball-btn" data-action="contactSwing">Contact Swing</button>
-          <button class="hud-btn baseball-btn" data-action="bunt">Bunt</button>
-        </div>
-      `;
-      break;
-      
-    case 'golf':
-      hud.innerHTML = `
-        <div class="hud-clubs">
-          <button class="hud-btn golf-btn" data-action="driver">Driver</button>
-          <button class="hud-btn golf-btn" data-action="wood">Wood</button>
-          <button class="hud-btn golf-btn" data-action="iron">Iron</button>
-          <button class="hud-btn golf-btn" data-action="wedge">Wedge</button>
-          <button class="hud-btn golf-btn" data-action="putter">Putter</button>
-        </div>
-        <div class="hud-shots">
-          <button class="hud-btn golf-btn" data-action="fullSwing">Full Swing</button>
-          <button class="hud-btn golf-btn" data-action="approach">Approach</button>
-          <button class="hud-btn golf-btn" data-action="chip">Chip</button>
-          <button class="hud-btn golf-btn" data-action="backspin">Backspin</button>
-        </div>
-      `;
-      break;
-      
-    case 'bowling':
-      hud.innerHTML = `
-        <div class="hud-spin">
-          <button class="hud-btn bowling-btn" data-action="straight">Straight</button>
-          <button class="hud-btn bowling-btn" data-action="leftHook">Left Hook</button>
-          <button class="hud-btn bowling-btn" data-action="rightHook">Right Hook</button>
-        </div>
-        <div class="hud-power">
-          <button class="hud-btn bowling-btn" data-action="powerThrow">Power Throw</button>
-          <button class="hud-btn bowling-btn" data-action="loftToggle">Loft Toggle</button>
-        </div>
-      `;
-      break;
-  }
-  
-  sportScreen.appendChild(hud);
-  
-  // Add click handlers
-  setupHUDButtons(sport);
-}
-
-// HUD button click handlers
-function setupHUDButtons(sport) {
-  const buttons = document.querySelectorAll('.hud-btn');
-  
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Visual feedback - lock-in highlight
-      btn.classList.add('hud-activated');
-      setTimeout(() => btn.classList.remove('hud-activated'), 150);
-      
-      // Sound effect trigger
-      const action = btn.dataset.action;
-      triggerSoundEffect(sport, action);
-      
-      // Handle the action
-      handleHUDAction(sport, action, btn);
-    });
+  canvas.addEventListener('pointerdown', event => {
+    canvas.setPointerCapture(event.pointerId);
+    const rect = canvas.getBoundingClientRect(); state.pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top, time: performance.now() };
   });
-}
-
-// Sound effect trigger
-function triggerSoundEffect(sport, action) {
-  const sfxKey = `${sport}-${action}`;
-  // In a full build, would play actual Wii-styled SFX
-  console.log(`SFX: ${sfxKey}`);
-}
-
-// Handle HUD actions per sport
-function handleHUDAction(sport, action, button) {
-  switch(sport) {
-    case 'boxing':
-      handleBoxingHUD(action, button);
-      break;
-    case 'tennis':
-      handleTennisHUD(action, button);
-      break;
-    case 'baseball':
-      handleBaseballHUD(action, button);
-      break;
-    case 'golf':
-      handleGolfHUD(action, button);
-      break;
-    case 'bowling':
-      handleBowlingHUD(action, button);
-      break;
-  }
-}
-
-// Boxing HUD actions
-function handleBoxingHUD(action, button) {
-  if (!gameState.currentSport || gameState.currentSport !== 'boxing') return;
-  
-  const bx = gameState.boxing;
-  
-  switch(action) {
-    case 'leftHook':
-      // Trigger left hook - curl heavy horizontal punch to opponent's right
-      throwPunch('leftHook');
-      bx.fighter1.targetSide = 'right';
-      break;
-    case 'rightHook':
-      // Trigger right hook - power hook to opponent's left
-      throwPunch('rightHook');
-      bx.fighter1.targetSide = 'left';
-      break;
-    case 'uppercut':
-      // Trigger uppercut - rising close-range strike
-      throwPunch('uppercut');
-      break;
-    case 'jab':
-      // Fast direct punch to interrupt combos
-      throwPunch('jab');
-      break;
-    case 'blockHigh':
-      // High block - raise both gloves to absorb punches
-      bx.fighter1.isBlocking = true;
-      bx.fighter1.blockType = 'high';
-      setTimeout(() => bx.fighter1.isBlocking = false, 500);
-      break;
-    case 'blockLow':
-      // Low block - absorb low strikes
-      bx.fighter1.isBlocking = true;
-      bx.fighter1.blockType = 'low';
-      setTimeout(() => bx.fighter1.isBlocking = false, 500);
-      break;
-    case 'dodgeLeft':
-      // Quick-step weave to evade hooks
-      bx.fighter1.isDodging = true;
-      bx.fighter1.dodgeDirection = 'left';
-      setTimeout(() => bx.fighter1.isDodging = false, 300);
-      break;
-    case 'dodgeRight':
-      // Quick-step weave to evade straights
-      bx.fighter1.isDodging = true;
-      bx.fighter1.dodgeDirection = 'right';
-      setTimeout(() => bx.fighter1.isDodging = false, 300);
-      break;
-  }
-}
-
-// Tennis HUD actions
-function handleTennisHUD(action, button) {
-  if (!gameState.currentSport || gameState.currentSport !== 'tennis') return;
-  
-  // Modify ball spin based on selection
-  // The actual swing execution depends on timing with swipe
-  switch(action) {
-    case 'topspin':
-      gameState.tennis.topspinActive = true;
-      gameState.tennis.spinType = 'topspin';
-      // Visual: high-pitched zip confirmation
-      console.log('Topspin selected - ball dips with high forward bounce');
-      break;
-    case 'backspin':
-      gameState.tennis.topspinActive = false;
-      gameState.tennis.spinType = 'backspin';
-      // Visual: backspin thud - keeps ball low and skidding
-      console.log('Backspin selected - ball skids across court');
-      break;
-    case 'lob':
-      gameState.tennis.lobActive = true;
-      // Visual: lofts ball high into blue sky
-      console.log('Lob selected - lofts ball high over opponent');
-      break;
-    case 'flatPower':
-      gameState.tennis.flatPower = true;
-      // Visual: high-velocity line drive
-      console.log('Flat Power selected - high-velocity line drive');
-      break;
-  }
-}
-
-// Baseball HUD actions
-function handleBaseballHUD(action, button) {
-  if (!gameState.currentSport || gameState.currentSport !== 'baseball') return;
-  
-  const bb = gameState.baseball;
-  
-  // Pitching mode
-  if (bb.pitchMode === undefined ? true : !bb.isBatting) {
-    switch(action) {
-      case 'fastball':
-        bb.pitchType = 'fastball';
-        bb.ball.vx = 20; // Max velocity
-        bb.ball.vy = 0;
-        console.log('Fastball selected - maximum velocity straight down the plate');
-        break;
-      case 'curve':
-        bb.pitchType = 'curveball';
-        bb.ball.vx = 12;
-        bb.ball.vy = 0;
-        bb.curveDirection = 'left';
-        console.log('Curveball selected - wide sweeping horizontal break');
-        break;
-      case 'screwball':
-        bb.pitchType = 'screwball';
-        bb.ball.vx = 12;
-        bb.ball.vy = 0;
-        bb.curveDirection = 'right';
-        console.log('Screwball selected - breaks sharply opposite direction');
-        break;
-      case 'splitter':
-        bb.pitchType = 'splitter';
-        bb.ball.vx = 12;
-        // Simulate sudden drop
-        console.log('Splitter selected - drops suddenly before home plate');
-        break;
+  canvas.addEventListener('pointerup', event => {
+    if (!state.pointer) return;
+    const rect = canvas.getBoundingClientRect(), x = event.clientX - rect.left, y = event.clientY - rect.top;
+    const dx = x - state.pointer.x, dy = y - state.pointer.y, elapsed = Math.max(100, performance.now() - state.pointer.time);
+    const power = Math.max(.25, Math.min(1, Math.hypot(dx, dy) / elapsed * 1.8));
+    if (state.sport === 'boxing' && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+      state.action = 'Dodge'; $$('.action-button').forEach(button => button.classList.toggle('selected', button.dataset.action === 'Dodge'));
     }
-    // Toggle to batting mode after pitch selection
-    bb.isBatting = true;
-    bb.pitchMode = false;
-  } else {
-    // Batting mode
-    switch(action) {
-      case 'powerSwing':
-        bb.swingType = 'power';
-        bb.powerMultiplier = 1.5;
-        console.log('Power Swing selected - full-force swing for home runs');
-        break;
-      case 'contactSwing':
-        bb.swingType = 'contact';
-        bb.powerMultiplier = 1.0;
-        console.log('Contact Swing selected - controlled wide-zone for base hits');
-        break;
-      case 'bunt':
-        bb.buntActive = true;
-        console.log('Bunt selected - softly taps ball into infield grass');
-        setTimeout(() => bb.buntActive = false, 1000);
-        break;
-    }
-    bb.isBatting = false;
-    bb.pitchMode = undefined;
+    if (dy < -12 || Math.abs(dx) > 35 || Math.abs(dy) < 12) playAction({ dx, dy, power, x, y });
+    state.pointer = null;
+  });
+  canvas.addEventListener('pointercancel', () => { state.pointer = null; });
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && state.screen === 'title-screen') { event.preventDefault(); $('#start-button').click(); }
+    if ((event.code === 'Space' || event.key === 'ArrowUp') && state.screen === 'game-screen') { event.preventDefault(); playAction({ dx: 0, dy: -100, power: .75, x: canvas.clientWidth * .55, y: canvas.clientHeight * .55 }); }
+    if (event.key === 'Escape' && state.screen !== 'title-screen') { clearInterval(state.searchTimer); showScreen('lobby-screen'); }
+  });
+  window.addEventListener('resize', () => { resizeTitleCanvas(); if (state.screen === 'game-screen') resizeGameCanvas(); });
+  updateMii(); updateProfile();
+  function animate(time) {
+    if (state.screen === 'title-screen') drawTitle(time);
+    if (state.screen === 'game-screen' && state.particles.length) drawGame();
+    requestAnimationFrame(animate);
   }
-}
-
-// Golf HUD actions
-function handleGolfHUD(action, button) {
-  if (!gameState.currentSport || gameState.currentSport !== 'golf') return;
-  
-  const g = gameState.golf;
-  
-  // Club selection
-  if (action.startsWith('driver') || action.startsWith('wood') || action.startsWith('iron') || action.startsWith('wedge') || action.startsWith('putter')) {
-    const clubMap = {
-      driver: 'driver',
-      wood: 'wood',
-      iron: 'iron',
-      wedge: 'wedge',
-      putter: 'putter'
-    };
-    g.clubType = clubMap[action];
-    // Metallic club-clink SFX
-    console.log(`Club selected: ${g.clubType}`);
-    return;
-  }
-  
-  // Shot type selection
-  switch(action) {
-    case 'fullSwing':
-      g.power = 100; // Max power
-      console.log('Full Swing selected - max backswing power for long fairways');
-      break;
-    case 'approach':
-      g.power = 70; // Medium power
-      console.log('Approach selected - medium power for approach shots');
-      break;
-    case 'chip':
-      g.power = 30; // Low power
-      console.log('Chip selected - delicate power for green-side shots');
-      break;
-    case 'backspin':
-      g.backspinToggle = !g.backspinToggle;
-      // Backspin click SFX
-      console.log(`Backspin ${g.backspinToggle ? 'enabled' : 'disabled'} - ball bites and stops on green`);
-      break;
-  }
-}
-
-// Bowling HUD actions
-function handleBowlingHUD(action, button) {
-  if (!gameState.currentSport || gameState.currentSport !== 'bowling') return;
-  
-  const b = gameState.bowling;
-  
-  switch(action) {
-    case 'straight':
-      b.spin = 0;
-      // Straight click-whir SFX
-      console.log('Straight ball selected - locks path for clean spare pickups');
-      break;
-    case 'leftHook':
-      b.spin = -30;
-      // Subtle click-whir SFX
-      console.log('Left Hook selected - pre-sets curve bias for 1-3 pocket');
-      break;
-    case 'rightHook':
-      b.spin = 30;
-      console.log('Right Hook selected - pre-sets curve bias for 1-2 pocket');
-      break;
-    case 'powerThrow':
-      b.power = 1.5; // Increased power
-      // Power throw SFX
-      console.log('Power Throw selected - increased release speed');
-      break;
-    case 'loftToggle':
-      b.loftToggle = !b.loftToggle;
-      // Loft toggle click SFX
-      console.log(`Loft Toggle ${b.loftToggle ? 'enabled' : 'disabled'} - adjusts release speed and early-lane bounce`);
-      break;
-  }
-}
+  requestAnimationFrame(() => { resizeTitleCanvas(); animate(performance.now()); });
+})();

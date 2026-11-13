@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="lobby.css" />
+  <link rel="stylesheet" href="progression.css" />
 </head>
 <body>
   <main id="game-shell">
@@ -22,7 +23,7 @@
         <h1>DROP IN.<br><span>LOCK ON.</span></h1>
         <p class="hero-copy">A close-quarters combat arena. No second chances.<br>Choose your kit and get to work.</p>
         <div class="mode-card"><div class="mode-icon">✳</div><div><div class="mode-name">TEAM DEATHMATCH</div><div class="mode-meta">5 VS 5 <span>•</span> 10 MIN <span>•</span> FIRST TO 20</div></div><div class="mode-chevron">⌄</div></div>
-        <div class="loadout-row"><div class="loadout-label">ACTIVE LOADOUT</div><div class="loadout"><div class="weapon-thumb"><span>▰</span></div><div><strong>RANGER 5.56</strong><small>ASSAULT RIFLE <i>•</i> LV. 12</small></div><div class="ammo-chip">30 <span>/ 120</span></div></div></div>
+        <div class="loadout-row"><div class="loadout-label">ACTIVE LOADOUT <span id="profile-level">LV. 1</span></div><div class="loadout"><div class="weapon-thumb"><span>▰</span></div><div><strong id="menu-weapon-name">SIDEARM 9MM</strong><small id="menu-weapon-type">PISTOL <i>•</i> UNLOCKED</small></div><div class="ammo-chip" id="menu-weapon-ammo">12 <span>/ 48</span></div></div><div class="xp-track"><i id="xp-progress"></i></div><small class="xp-caption" id="xp-caption">0 / 100 XP TO NEXT LEVEL</small><div class="arsenal" id="arsenal" aria-label="Weapon selection"></div></div>
         <button id="deploy" class="deploy-button"><span>DEPLOY TO ARENA</span><b>→</b></button>
         <div class="ready-note"><span class="live-dot"></span> SERVER READY <span>·</span> PING 24MS</div>
       </section>
@@ -37,29 +38,42 @@
           <h1 id="lobby-title">SQUAD<br><span>ASSEMBLE.</span></h1>
           <p class="hero-copy">Your fireteam is staged and ready. Find a match and get boots on the ground.</p>
           <div class="queue-options" role="group" aria-label="Match type">
-            <button class="queue-option selected" type="button" data-match-type="practice" aria-pressed="true"><span class="option-icon">⌖</span><span class="option-copy"><strong>LOCAL PRACTICE</strong><small>Play now · bots fill slots</small></span><span class="option-state">READY</span></button>
-            <button class="queue-option" type="button" data-match-type="online" aria-pressed="false"><span class="option-icon">◎</span><span class="option-copy"><strong>ONLINE MULTIPLAYER</strong><small>Match with other players</small></span><span class="option-state">UNAVAILABLE</span></button>
+            <button class="queue-option selected" type="button" data-match-type="practice" aria-pressed="true"><span class="option-icon">⌖</span><span class="option-copy"><strong>LOCAL PRACTICE</strong><small id="practice-player-count" aria-live="polite">1 HUMAN · 5/5 AI ACTIVE</small></span><span class="option-state">READY</span></button>
+            <button class="queue-option" type="button" data-match-type="online" aria-pressed="false"><span class="option-icon">◎</span><span class="option-copy"><strong>ONLINE MULTIPLAYER</strong><small id="online-player-count">LIVE COUNT UNAVAILABLE</small></span><span class="option-state">UNAVAILABLE</span></button>
           </div>
           <div class="lobby-match-meta">TEAM DEATHMATCH <span>•</span> IRON YARD <span>•</span> 5 VS 5</div>
           <div class="queue-status" aria-live="polite"><span class="queue-indicator"></span><div><strong id="queue-title">READY TO DEPLOY</strong><small id="queue-detail">Practice match · bots fill open slots</small></div><time id="queue-timer">00:00</time></div>
           <div class="lobby-actions"><button id="find-match" class="deploy-button" type="button"><span>FIND MATCH</span><b>→</b></button><button id="cancel-queue" class="text-button hidden" type="button">CANCEL SEARCH</button></div>
           <p class="lobby-disclaimer" id="lobby-disclaimer">LOCAL PRACTICE MATCHMAKING · BOTS FILL OPEN SLOTS</p>
         </section>
-        <aside class="squad-panel"><div class="squad-heading"><div><span class="eyebrow-line"></span> YOUR FIRETEAM</div><span>1 / 5</span></div><div class="squad-list"><div class="squad-member squad-you"><div class="squad-avatar">R</div><div><strong>ROOKIE</strong><small>FIRETEAM LEADER</small></div><span class="member-ready">READY</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div></div><div class="squad-foot"><span class="live-dot"></span> SQUAD PRIVACY <b>OPEN</b></div></aside>
+        <aside class="squad-panel"><div class="operator-preview"><canvas id="operator-preview-canvas" aria-label="Your operator wearing combat gear and holding the selected weapon"></canvas><div class="operator-preview-label"><span>YOUR OPERATOR</span><strong id="preview-weapon-name">SIDEARM 9MM</strong></div><div class="operator-preview-tag">FIELD KIT <i>•</i> READY</div></div><div class="squad-heading"><div><span class="eyebrow-line"></span> YOUR FIRETEAM</div><span id="party-count">1 / 5</span></div><div class="squad-list" id="squad-list"></div><section class="friends-panel" aria-labelledby="friends-title"><div class="friends-heading"><div><span class="eyebrow-line"></span> <span id="friends-title">FRIENDS</span></div><small>LOCAL LIST</small></div><form id="add-friend-form" class="add-friend-form"><label class="visually-hidden" for="friend-name">Friend callsign</label><input id="friend-name" name="friend" maxlength="20" autocomplete="off" placeholder="ENTER CALLSIGN" required><button type="submit" aria-label="Add friend">ADD</button></form><p class="friends-note" id="friends-note" aria-live="polite">Add a callsign to your local friends list.</p><div id="friends-list" class="friends-list"></div><p class="invite-disclaimer">Invites are a local demo. Connecting friends requires an online service.</p></section><div class="squad-foot"><span class="live-dot"></span> SQUAD PRIVACY <b>OPEN</b></div></aside>
       </div>
       <footer class="menu-footer"><span>OPERATION: IRON YARD</span><span>LOCAL PRACTICE QUEUE</span><span>SEASON 04 <b>▲</b></span></footer>
     </section>
     <div id="hud" class="hud hidden">
-      <div class="hud-top"><div class="match-info"><span class="match-label">TEAM DEATHMATCH</span><span class="map-label">IRON YARD <i> / </i> 5V5</span></div><div class="scoreboard"><div class="team-score blue-score"><span>YOUR SQUAD</span><b id="blue-score">00</b></div><div class="score-divider"><span id="match-clock">10:00</span><small>TIME LEFT</small></div><div class="team-score red-score"><span>OPPOSITION</span><b id="red-score">00</b></div></div><button id="pause-button" class="pause-button" aria-label="Pause">Ⅱ</button></div>
+      <div class="hud-top"><div class="match-info"><span class="match-label">TEAM DEATHMATCH</span><span class="map-label">IRON YARD <i> / </i> 5V5</span><span class="map-label" id="hud-player-count" aria-live="polite">1 HUMAN · 5/5 AI ACTIVE</span></div><div class="scoreboard"><div class="team-score blue-score"><span>YOUR SQUAD</span><b id="blue-score">00</b></div><div class="score-divider"><span id="match-clock">10:00</span><small>TIME LEFT</small></div><div class="team-score red-score"><span>OPPOSITION</span><b id="red-score">00</b></div></div><button id="pause-button" class="pause-button" aria-label="Pause">Ⅱ</button></div>
       <div class="objective-banner" id="objective">ELIMINATE ENEMY OPERATORS</div>
       <div class="hit-marker" id="hit-marker"><i></i><i></i><i></i><i></i></div>
       <div class="kill-feed" id="kill-feed"></div>
       <div class="bottom-left"><div class="player-status"><div class="operator-avatar">▰</div><div><strong>ROOKIE <span>01</span></strong><div class="health-track"><i id="health-bar"></i></div></div><b id="health-num">100</b></div><div class="controls-hint">WASD <span>MOVE</span>&nbsp;&nbsp; SHIFT <span>SPRINT</span>&nbsp;&nbsp; R <span>RELOAD</span></div></div>
       <div class="minimap-frame"><div class="minimap-title">IRON YARD <span>● LIVE</span></div><canvas id="minimap" width="156" height="116"></canvas><span class="map-north">N</span></div>
-      <div class="weapon-hud"><div class="weapon-name">RANGER <span>5.56</span></div><div class="ammo-readout"><b id="ammo">30</b><span>/ 120</span></div><div class="ammo-label">ASSAULT RIFLE <span>•</span> FULL AUTO</div><div class="weapon-key">1</div></div>
+      <div class="weapon-hud"><div class="weapon-name" id="hud-weapon-name">SIDEARM <span>9MM</span></div><div class="ammo-readout"><b id="ammo">12</b><span>/ <i id="reserve-ammo">48</i></span></div><div class="ammo-label" id="hud-weapon-type">PISTOL <span>•</span> SEMI-AUTO</div><div class="weapon-key" id="weapon-key">1</div></div>
       <div class="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
       <div class="damage-vignette"></div><div class="reload-indicator" id="reload-indicator">RELOADING <i></i></div>
       <div class="interaction-hint" id="interaction-hint">CLICK TO RESUME</div>
+      <div class="touch-look-zone" id="touch-look-zone" aria-label="Drag to look around"></div>
+      <div class="touch-controls" aria-label="Touch controls">
+        <div class="move-pad" id="move-pad" aria-label="Move joystick">
+          <span class="pad-label">MOVE</span>
+          <div class="stick-base"><i class="stick-knob" id="stick-knob"></i></div>
+        </div>
+        <div class="touch-actions">
+          <button class="touch-control" id="touch-sprint" type="button" aria-pressed="false">RUN</button>
+          <button class="touch-control" id="touch-crouch" type="button" aria-pressed="false">CROUCH</button>
+          <button class="touch-control" id="touch-reload" type="button">RELOAD</button>
+          <button class="touch-control touch-fire" id="touch-fire" type="button">FIRE</button>
+        </div>
+      </div>
     </div>
     <div id="pause-screen" class="modal hidden"><div class="modal-panel"><div class="eyebrow">COMBAT PAUSED</div><h2>TAKE A BREATHER.</h2><p>Your squad is holding position.</p><button id="resume" class="deploy-button"><span>BACK TO THE FIGHT</span><b>→</b></button><button id="quit" class="text-button">RETURN TO DEPLOYMENT</button></div></div>
     <div id="result-screen" class="modal hidden"><div class="modal-panel"><div class="eyebrow" id="result-kicker">MATCH COMPLETE</div><h2 id="result-title">VICTORY.</h2><p id="result-copy">The yard is yours.</p><div class="result-stats"><div><b id="final-kills">0</b><span>ELIMINATIONS</span></div><div><b id="final-deaths">0</b><span>DEPLOYMENTS</span></div><div><b id="final-accuracy">0%</b><span>ACCURACY</span></div></div><button id="play-again" class="deploy-button"><span>DEPLOY AGAIN</span><b>→</b></button><button id="main-menu" class="text-button">RETURN TO MENU</button></div></div>

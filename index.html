@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#101918" />
+  <title>Riftland — Last One Standing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game" aria-label="Riftland battle arena"></canvas>
+    <div class="vignette"></div>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">R</span><div><b>RIFTLAND</b><small>LAST ONE STANDING</small></div></div>
+      <div class="match-pill"><i></i> SOLO • CLASSIC</div>
+      <div class="top-right"><div class="ping"><span></span><span></span><span></span> <b>34</b> MS</div><button id="sound-toggle" class="icon-button" aria-label="Toggle sound">♫</button><button id="pause-button" class="icon-button" aria-label="Pause">Ⅱ</button></div>
+    </header>
+    <section class="hud-top-left"><div class="phase-label"><span class="phase-dot"></span> <span id="phase-text">DROP IN</span></div><div class="objective" id="objective">Find gear. Stay in the safe zone.</div></section>
+    <section class="hud-top-right"><div class="alive-card"><span class="person-icon">♟</span><div><strong id="alive-count">15</strong><small>REMAINING</small></div></div><div class="elims-card"><span class="crosshair-icon">✳</span><div><strong id="elim-count">0</strong><small>ELIMS</small></div></div><div class="mini-map"><canvas id="minimap" width="180" height="180"></canvas><div class="map-label">RIFT ISLAND <span>● LIVE</span></div></div></section>
+    <section class="hud-bottom-left"><div class="player-card"><div class="avatar">✦</div><div class="player-name"><b>ROOKIE RANGER</b><small>LVL 01 <span>•</span> SOLO</small></div><div class="net-status">●</div></div><div class="vitals"><div class="vital-row"><span class="vital-symbol shield-symbol">⬡</span><div class="bar-wrap"><div class="bar shield-bar" id="shield-bar"></div></div><b id="shield-value">50</b></div><div class="vital-row"><span class="vital-symbol health-symbol">✚</span><div class="bar-wrap"><div class="bar health-bar" id="health-bar"></div></div><b id="health-value">100</b></div></div></section>
+    <section class="hud-bottom-right"><div class="weapon-panel"><div class="weapon-info"><div><small id="weapon-rarity">COMMON • RIFLE</small><strong id="weapon-name">Trailblazer AR</strong></div><div class="ammo"><strong id="ammo-now">24</strong><span>/ <b id="ammo-reserve">96</b></span></div></div><div class="weapon-art" id="weapon-art"><div class="gun-shape"><i></i></div></div><div class="quickbar" id="quickbar"></div></div></section>
+    <div class="center-notice" id="center-notice"></div>
+    <div class="storm-warning" id="storm-warning"><span>⚠</span><div><b>THE RIFT IS CLOSING</b><small>Move inside the safe zone</small></div></div>
+    <div class="feed" id="feed"></div>
+    <div class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE <span>•</span> MOUSE AIM <span>•</span> <kbd>CLICK</kbd> FIRE <span>•</span> <kbd>E</kbd> PICK UP <span>•</span> <kbd>F</kbd> BUILD</div>
+    <div class="mobile-controls" id="mobile-controls"><div class="move-pad" id="move-pad"><div class="pad-thumb" id="pad-thumb"></div></div><button id="mobile-fire">FIRE</button><button id="mobile-pickup">PICK</button></div>
+    <div class="screen" id="intro-screen"><div class="intro-backdrop"></div><div class="intro-content"><div class="season-tag"><span></span> CHAPTER ZERO • CLASSIC</div><div class="intro-title">DROP INTO<br><em>RIFTLAND.</em></div><p>One island. Fifteen players. No second chances.</p><div class="intro-meta"><div><span class="meta-icon">⌖</span><b>RIFT ISLAND</b><small>SOLO • 15 PLAYERS</small></div><div><span class="meta-icon">◷</span><b>~ 5 MIN</b><small>QUICK MATCH</small></div></div><button class="play-button" id="play-button"><span>DEPLOY</span><b>→</b></button><div class="intro-foot">A fresh drop is waiting <span>•</span> WASD to move, mouse to aim</div></div><div class="intro-side"><div class="island-orbit"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="island-disc"><div class="island-land"></div><span class="island-pin pin-a">◆</span><span class="island-pin pin-b">◆</span><span class="island-pin pin-c">◆</span></div><div class="orbit-star star-one">✦</div><div class="orbit-star star-two">✧</div></div><div class="island-caption"><b>THE RIFT ISLAND</b><span>10 UNIQUE DROP SITES</span></div></div></div></div>
+    <div class="screen hidden" id="pause-screen"><div class="modal"><div class="season-tag">MATCH PAUSED</div><h2>TAKE A BREATHER.</h2><p>Your island is waiting.</p><button class="play-button" id="resume-button"><span>BACK IN</span><b>→</b></button><button class="text-button" id="quit-button">RETURN TO LOBBY</button></div></div>
+    <div class="screen hidden" id="end-screen"><div class="modal"><div class="season-tag" id="end-tag">MATCH COMPLETE</div><h2 id="end-title">NICE RUN.</h2><p id="end-copy">The island will remember.</p><div class="end-stats"><div><b id="end-place">#1</b><small>PLACEMENT</small></div><div><b id="end-elims">0</b><small>ELIMINATIONS</small></div></div><button class="play-button" id="again-button"><span>PLAY AGAIN</span><b>→</b></button></div></div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

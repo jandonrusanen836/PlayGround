@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101619" />
+  <title>FRONTLINE — Combat Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game"></canvas>
+    <div class="grain"></div>
+    <div id="start-screen" class="screen">
+      <header class="topbar"><div class="brand"><span class="brand-mark">F</span><span>FRONTLINE<span class="brand-dot">.</span></span></div><div class="top-status"><span class="live-dot"></span> COMBAT SIMULATION <span class="divider">/</span> BUILD 04.27</div><button id="sound-toggle" class="icon-button" aria-label="Toggle sound">♫ <span>SOUND ON</span></button></header>
+      <section class="hero">
+        <div class="eyebrow"><span class="eyebrow-line"></span> MULTIPLAYER // DEPLOYMENT READY</div>
+        <h1>DROP IN.<br><span>LOCK ON.</span></h1>
+        <p class="hero-copy">A close-quarters combat arena. No second chances.<br>Choose your kit and get to work.</p>
+        <div class="mode-card"><div class="mode-icon">✳</div><div><div class="mode-name">TEAM DEATHMATCH</div><div class="mode-meta">5 VS 5 <span>•</span> 10 MIN <span>•</span> FIRST TO 20</div></div><div class="mode-chevron">⌄</div></div>
+        <div class="loadout-row"><div class="loadout-label">ACTIVE LOADOUT</div><div class="loadout"><div class="weapon-thumb"><span>▰</span></div><div><strong>RANGER 5.56</strong><small>ASSAULT RIFLE <i>•</i> LV. 12</small></div><div class="ammo-chip">30 <span>/ 120</span></div></div></div>
+        <button id="deploy" class="deploy-button"><span>DEPLOY TO ARENA</span><b>→</b></button>
+        <div class="ready-note"><span class="live-dot"></span> SERVER READY <span>·</span> PING 24MS</div>
+      </section>
+      <footer class="menu-footer"><span>OPERATION: IRON YARD</span><span>© FRONTLINE COMBAT SYSTEMS</span><span>SEASON 04 <b>▲</b></span></footer>
+      <div class="menu-coordinate">35°41'22.8"N&nbsp; 139°41'30.1"E</div>
+    </div>
+    <div id="hud" class="hud hidden">
+      <div class="hud-top"><div class="match-info"><span class="match-label">TEAM DEATHMATCH</span><span class="map-label">IRON YARD <i> / </i> 5V5</span></div><div class="scoreboard"><div class="team-score blue-score"><span>YOUR SQUAD</span><b id="blue-score">00</b></div><div class="score-divider"><span id="match-clock">10:00</span><small>TIME LEFT</small></div><div class="team-score red-score"><span>OPPOSITION</span><b id="red-score">00</b></div></div><button id="pause-button" class="pause-button" aria-label="Pause">Ⅱ</button></div>
+      <div class="objective-banner" id="objective">ELIMINATE ENEMY OPERATORS</div>
+      <div class="hit-marker" id="hit-marker"><i></i><i></i><i></i><i></i></div>
+      <div class="kill-feed" id="kill-feed"></div>
+      <div class="bottom-left"><div class="player-status"><div class="operator-avatar">▰</div><div><strong>ROOKIE <span>01</span></strong><div class="health-track"><i id="health-bar"></i></div></div><b id="health-num">100</b></div><div class="controls-hint">WASD <span>MOVE</span>&nbsp;&nbsp; SHIFT <span>SPRINT</span>&nbsp;&nbsp; R <span>RELOAD</span></div></div>
+      <div class="minimap-frame"><div class="minimap-title">IRON YARD <span>● LIVE</span></div><canvas id="minimap" width="156" height="116"></canvas><span class="map-north">N</span></div>
+      <div class="weapon-hud"><div class="weapon-name">RANGER <span>5.56</span></div><div class="ammo-readout"><b id="ammo">30</b><span>/ 120</span></div><div class="ammo-label">ASSAULT RIFLE <span>•</span> FULL AUTO</div><div class="weapon-key">1</div></div>
+      <div class="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+      <div class="damage-vignette"></div><div class="reload-indicator" id="reload-indicator">RELOADING <i></i></div>
+      <div class="interaction-hint" id="interaction-hint">CLICK TO RESUME</div>
+    </div>
+    <div id="pause-screen" class="modal hidden"><div class="modal-panel"><div class="eyebrow">COMBAT PAUSED</div><h2>TAKE A BREATHER.</h2><p>Your squad is holding position.</p><button id="resume" class="deploy-button"><span>BACK TO THE FIGHT</span><b>→</b></button><button id="quit" class="text-button">RETURN TO DEPLOYMENT</button></div></div>
+    <div id="result-screen" class="modal hidden"><div class="modal-panel"><div class="eyebrow" id="result-kicker">MATCH COMPLETE</div><h2 id="result-title">VICTORY.</h2><p id="result-copy">The yard is yours.</p><div class="result-stats"><div><b id="final-kills">0</b><span>ELIMINATIONS</span></div><div><b id="final-deaths">0</b><span>DEPLOYMENTS</span></div><div><b id="final-accuracy">0%</b><span>ACCURACY</span></div></div><button id="play-again" class="deploy-button"><span>DEPLOY AGAIN</span><b>→</b></button><button id="main-menu" class="text-button">RETURN TO MENU</button></div></div>
+    <div id="toast" class="toast"></div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

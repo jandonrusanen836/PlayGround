@@ -36,10 +36,14 @@
           <div class="eyebrow"><span class="eyebrow-line"></span> MATCHMAKING // TEAM DEATHMATCH</div>
           <h1 id="lobby-title">SQUAD<br><span>ASSEMBLE.</span></h1>
           <p class="hero-copy">Your fireteam is staged and ready. Find a match and get boots on the ground.</p>
-          <div class="lobby-mode"><div class="mode-icon">✳</div><div><div class="mode-name">TEAM DEATHMATCH</div><div class="mode-meta">IRON YARD <span>•</span> 5 VS 5 <span>•</span> FIRST TO 20</div></div><span class="queue-region">LOCAL</span></div>
+          <div class="queue-options" role="group" aria-label="Match type">
+            <button class="queue-option selected" type="button" data-match-type="practice" aria-pressed="true"><span class="option-icon">⌖</span><span class="option-copy"><strong>LOCAL PRACTICE</strong><small>Play now · bots fill slots</small></span><span class="option-state">READY</span></button>
+            <button class="queue-option" type="button" data-match-type="online" aria-pressed="false"><span class="option-icon">◎</span><span class="option-copy"><strong>ONLINE MULTIPLAYER</strong><small>Match with other players</small></span><span class="option-state">UNAVAILABLE</span></button>
+          </div>
+          <div class="lobby-match-meta">TEAM DEATHMATCH <span>•</span> IRON YARD <span>•</span> 5 VS 5</div>
           <div class="queue-status" aria-live="polite"><span class="queue-indicator"></span><div><strong id="queue-title">READY TO DEPLOY</strong><small id="queue-detail">Practice match · bots fill open slots</small></div><time id="queue-timer">00:00</time></div>
           <div class="lobby-actions"><button id="find-match" class="deploy-button" type="button"><span>FIND MATCH</span><b>→</b></button><button id="cancel-queue" class="text-button hidden" type="button">CANCEL SEARCH</button></div>
-          <p class="lobby-disclaimer">LOCAL PRACTICE MATCHMAKING · NO ONLINE PLAYERS</p>
+          <p class="lobby-disclaimer" id="lobby-disclaimer">LOCAL PRACTICE MATCHMAKING · BOTS FILL OPEN SLOTS</p>
         </section>
         <aside class="squad-panel"><div class="squad-heading"><div><span class="eyebrow-line"></span> YOUR FIRETEAM</div><span>1 / 5</span></div><div class="squad-list"><div class="squad-member squad-you"><div class="squad-avatar">R</div><div><strong>ROOKIE</strong><small>FIRETEAM LEADER</small></div><span class="member-ready">READY</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div></div><div class="squad-foot"><span class="live-dot"></span> SQUAD PRIVACY <b>OPEN</b></div></aside>
       </div>

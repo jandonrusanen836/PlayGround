@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="lobby.css" />
 </head>
 <body>
   <main id="game-shell">
@@ -28,6 +29,22 @@
       <footer class="menu-footer"><span>OPERATION: IRON YARD</span><span>© FRONTLINE COMBAT SYSTEMS</span><span>SEASON 04 <b>▲</b></span></footer>
       <div class="menu-coordinate">35°41'22.8"N&nbsp; 139°41'30.1"E</div>
     </div>
+    <section id="lobby-screen" class="lobby-screen hidden" aria-labelledby="lobby-title">
+      <header class="topbar"><div class="brand"><span class="brand-mark">F</span><span>FRONTLINE<span class="brand-dot">.</span></span></div><div class="top-status"><span class="live-dot"></span> FIRETEAM LOBBY <span class="divider">/</span> IRON YARD</div><button id="lobby-back" class="icon-button" type="button">← <span>BACK</span></button></header>
+      <div class="lobby-layout">
+        <section class="lobby-main">
+          <div class="eyebrow"><span class="eyebrow-line"></span> MATCHMAKING // TEAM DEATHMATCH</div>
+          <h1 id="lobby-title">SQUAD<br><span>ASSEMBLE.</span></h1>
+          <p class="hero-copy">Your fireteam is staged and ready. Find a match and get boots on the ground.</p>
+          <div class="lobby-mode"><div class="mode-icon">✳</div><div><div class="mode-name">TEAM DEATHMATCH</div><div class="mode-meta">IRON YARD <span>•</span> 5 VS 5 <span>•</span> FIRST TO 20</div></div><span class="queue-region">LOCAL</span></div>
+          <div class="queue-status" aria-live="polite"><span class="queue-indicator"></span><div><strong id="queue-title">READY TO DEPLOY</strong><small id="queue-detail">Practice match · bots fill open slots</small></div><time id="queue-timer">00:00</time></div>
+          <div class="lobby-actions"><button id="find-match" class="deploy-button" type="button"><span>FIND MATCH</span><b>→</b></button><button id="cancel-queue" class="text-button hidden" type="button">CANCEL SEARCH</button></div>
+          <p class="lobby-disclaimer">LOCAL PRACTICE MATCHMAKING · NO ONLINE PLAYERS</p>
+        </section>
+        <aside class="squad-panel"><div class="squad-heading"><div><span class="eyebrow-line"></span> YOUR FIRETEAM</div><span>1 / 5</span></div><div class="squad-list"><div class="squad-member squad-you"><div class="squad-avatar">R</div><div><strong>ROOKIE</strong><small>FIRETEAM LEADER</small></div><span class="member-ready">READY</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div><div class="squad-member"><div class="squad-avatar">＋</div><div><strong>OPEN SLOT</strong><small>BOT FILL</small></div><span class="slot-dash">—</span></div></div><div class="squad-foot"><span class="live-dot"></span> SQUAD PRIVACY <b>OPEN</b></div></aside>
+      </div>
+      <footer class="menu-footer"><span>OPERATION: IRON YARD</span><span>LOCAL PRACTICE QUEUE</span><span>SEASON 04 <b>▲</b></span></footer>
+    </section>
     <div id="hud" class="hud hidden">
       <div class="hud-top"><div class="match-info"><span class="match-label">TEAM DEATHMATCH</span><span class="map-label">IRON YARD <i> / </i> 5V5</span></div><div class="scoreboard"><div class="team-score blue-score"><span>YOUR SQUAD</span><b id="blue-score">00</b></div><div class="score-divider"><span id="match-clock">10:00</span><small>TIME LEFT</small></div><div class="team-score red-score"><span>OPPOSITION</span><b id="red-score">00</b></div></div><button id="pause-button" class="pause-button" aria-label="Pause">Ⅱ</button></div>
       <div class="objective-banner" id="objective">ELIMINATE ENEMY OPERATORS</div>

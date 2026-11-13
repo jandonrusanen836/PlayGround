@@ -5,6 +5,7 @@ const startScreen = document.querySelector('#start-screen');
 const hud = document.querySelector('#hud');
 const pauseScreen = document.querySelector('#pause-screen');
 const resultScreen = document.querySelector('#result-screen');
+const lobbyScreen = document.querySelector('#lobby-screen');
 const toastEl = document.querySelector('#toast');
 const liveDot = document.querySelector('.live-dot');
 
@@ -405,6 +406,7 @@ function resetRound() {
   hud.classList.remove('hidden');
   pauseScreen.classList.add('hidden');
   resultScreen.classList.add('hidden');
+  lobbyScreen.classList.add('hidden');
   startScreen.classList.add('hidden');
   document.body.requestPointerLock?.();
 }
@@ -730,8 +732,70 @@ canvas.addEventListener('mousedown', (event) => {
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
 const deployButton = document.querySelector('#deploy');
+const findMatchButton = document.querySelector('#find-match');
+const cancelQueueButton = document.querySelector('#cancel-queue');
+const queueStatus = document.querySelector('.queue-status');
+const queueTitle = document.querySelector('#queue-title');
+const queueDetail = document.querySelector('#queue-detail');
+const queueTimer = document.querySelector('#queue-timer');
+let queueInterval = 0;
+let queueTimeout = 0;
+let queueStartedAt = 0;
+
+function stopMatchmaking() {
+  window.clearInterval(queueInterval);
+  window.clearTimeout(queueTimeout);
+  queueInterval = 0;
+  queueTimeout = 0;
+  queueStatus.classList.remove('searching');
+  queueTitle.textContent = 'READY TO DEPLOY';
+  queueDetail.textContent = 'Practice match · bots fill open slots';
+  queueTimer.textContent = '00:00';
+  findMatchButton.disabled = false;
+  findMatchButton.querySelector('span').textContent = 'FIND MATCH';
+  cancelQueueButton.classList.add('hidden');
+}
+
+function beginMatchmaking() {
+  if (queueInterval || game.playing) return;
+  queueStartedAt = Date.now();
+  queueStatus.classList.add('searching');
+  queueTitle.textContent = 'SEARCHING FOR MATCH';
+  queueDetail.textContent = 'Building a local practice match…';
+  findMatchButton.disabled = true;
+  findMatchButton.querySelector('span').textContent = 'SEARCHING';
+  cancelQueueButton.classList.remove('hidden');
+  queueInterval = window.setInterval(() => {
+    const elapsed = Math.floor((Date.now() - queueStartedAt) / 1000);
+    queueTimer.textContent = `00:${String(elapsed).padStart(2, '0')}`;
+  }, 250);
+  queueTimeout = window.setTimeout(() => {
+    window.clearInterval(queueInterval);
+    queueInterval = 0;
+    queueStatus.classList.remove('searching');
+    queueTitle.textContent = 'MATCH FOUND';
+    queueDetail.textContent = 'Iron Yard · bots assigned to open slots';
+    queueTimer.textContent = 'READY';
+    cancelQueueButton.classList.add('hidden');
+    queueTimeout = window.setTimeout(() => {
+      stopMatchmaking();
+      lobbyScreen.classList.add('hidden');
+      resetRound();
+      toast('PRACTICE MATCH STARTING');
+    }, 850);
+  }, 3200);
+}
+
 deployButton.addEventListener('click', () => {
-  resetRound();
+  startScreen.classList.add('hidden');
+  lobbyScreen.classList.remove('hidden');
+});
+findMatchButton.addEventListener('click', beginMatchmaking);
+cancelQueueButton.addEventListener('click', stopMatchmaking);
+document.querySelector('#lobby-back').addEventListener('click', () => {
+  stopMatchmaking();
+  lobbyScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
 });
 
 document.querySelector('#sound-toggle').addEventListener('click', () => {

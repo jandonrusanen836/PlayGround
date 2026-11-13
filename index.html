@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wii Sports Remake</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Main Menu -->
+    <div id="main-menu" class="screen">
+      <h1>Wii Sports</h1>
+      <div class="menu-options">
+        <button class="btn-sport" data-sport="tennis">Tennis</button>
+        <button class="btn-sport" data-sport="baseball">Baseball</button>
+        <button class="btn-sport" data-sport="golf">Golf</button>
+        <button class="btn-sport" data-sport="boxing">Boxing</button>
+        <button class="btn-sport" data-sport="bowling">Bowling</button>
+        <button class="btn-option" data-option="customize">Character Creator</button>
+        <button class="btn-option" data-option="online">Online Matchmaking</button>
+      </div>
+    </div>
+
+    <!-- Character Creator -->
+    <div id="creator" class="screen">
+      <h2>Mii Character Creator</h2>
+      <div class="creator-panel">
+        <div class="creator-character" id="miicharacter"></div>
+        <div class="creator-controls">
+          <button class="btn-control" data-feat="gender">Gender</button>
+          <button class="btn-control" data-feat="head-shape">Head Shape</button>
+          <button class="btn-control" data-feat="hair">Hair</button>
+          <button class="btn-control" data-feat="eyes">Eyes</button>
+          <button class="btn-control" data-feat="nose">Nose</button>
+          <button class="btn-control" data-feat="mouth">Mouth</button>
+          <button class="btn-control" data-feat="eyebrows">Eyebrows</button>
+          <button class="btn-control" data-feat="facial-hair">Facial Hair</button>
+          <button class="btn-control" data-feat="glasses">Glasses</button>
+          <div class="color-picker">
+            <span>Outfit Color:</span>
+            <input type="color" id="outfit-color">
+          </div>
+        </div>
+      </div>
+      <button class="btn-back" onclick="goBack()">Back</button>
+    </div>
+
+    <!-- Sport Screens -->
+    <div id="sport-screen" class="screen">
+      <div class="sport-header">
+        <span id="sport-name"></span>
+        <div id="matchmaking-timer" class="timer hidden">Loading... Matchmaking</div>
+      </div>
+      <div class="game-area" id="game-area"></div>
+      <div class="controls-instruction" id="controls-instruction"></div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+      <h2 id="result-title"></h2>
+      <p id="result-desc"></p>
+      <button class="btn-back" onclick="goBack()">Back to Menu</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

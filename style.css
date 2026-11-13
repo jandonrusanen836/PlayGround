@@ -1,0 +1,408 @@
+/* Wii Sports Remake - Nostalgic Aesthetics */
+:root {
+  --wii-blue: #3A97D9;
+  --wii-blue-dark: #2A78AE;
+  --wii-yellow: #FFC425;
+  --wii-green: #73AD21;
+  --wii-red: #E41A1C;
+  --wii-orange: #FF6B35;
+  --bg-dark: #1A1A1A;
+  --bg-medium: #2A2A2A;
+  --fg-light: #F5F5F5;
+  --fg-muted: #B0B0B0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: var(--bg-dark);
+  color: var(--fg-light);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#game-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Screens */
+.screen {
+  display: none;
+  position: relative;
+  min-height: 400px;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* Main Menu */
+#main-menu {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+#main-menu h1 {
+  font-size: 48px;
+  color: var(--wii-blue);
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+#main-menu p {
+  color: var(--fg-muted);
+  margin-bottom: 40px;
+  font-size: 14px;
+
+}
+
+.menu-options .btn-sport,
+.menu-options .btn-option {
+  display: inline-block;
+  margin: 10px;
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-medium);
+  color: var(--fg-light);
+}
+
+.menu-options .btn-sport:hover,
+.menu-options .btn-option:hover {
+  background: var(--wii-blue);
+  transform: translateY(-2px);
+}
+
+.menu-options .btn-sport:active,
+.menu-options .btn-option:active {
+  transform: translateY(0);
+}
+
+/* Character Creator */
+.creator-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.creator-character {
+  width: 150px;
+  height: 200px;
+  background: var(--bg-medium);
+  border-radius: 8px;
+  position: relative;
+  border: 2px solid var(--wii-blue);
+}
+
+.creator-character::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 20px;
+  background: var(--wii-yellow);
+  bottom: -10px;
+  left: 50%;
+  margin-left: -15px;
+  border-radius: 50%;
+}
+
+.creator-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 200px;
+}
+
+.btn-control {
+  padding: 8px 12px;
+  background: var(--bg-medium);
+  border: 1px solid var(--fg-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--fg-light);
+}
+
+.btn-control:hover {
+  border-color: var(--wii-blue);
+  background: var(--wii-blue-dark);
+}
+
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.color-picker span {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.color-picker input {
+  width: 50px;
+  height: 25px;
+  cursor: pointer;
+}
+
+/* Sport Screens */
+.sport-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid var(--fg-muted);
+  margin-bottom: 20px;
+}
+
+.sport-header h2 {
+  font-size: 24px;
+  color: var(--wii-blue);
+}
+
+.timer {
+  background: var(--wii-blue);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.game-area {
+  position: relative;
+  height: 400px;
+  background: var(--bg-medium);
+  border: 2px solid var(--wii-blue);
+  overflow: relative;
+}
+
+/* Game specific styles will be added dynamically */
+
+/* Controls */
+.controls-instruction {
+  padding: 15px 20px;
+  background: var(--bg-medium);
+  border-top: 2px solid var(--fg-muted);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.controls-instruction p {
+  margin-bottom: 5px;
+}
+
+/* Result Screen */
+#result-screen {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+#result-screen h2 {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+#result-screen p {
+  font-size: 16px;
+  color: var(--fg-muted);
+  margin-bottom: 30px;
+}
+
+/* Buttons */
+.btn-back,
+.btn-sport, .btn-option {
+  display: inline-block;
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-medium);
+  color: var(--fg-light);
+}
+
+.btn-back:hover,
+.btn-sport:hover,
+.btn-option:hover {
+  background: var(--wii-blue);
+}
+
+.btn-back:active,
+.btn-sport:active,
+.btn-option:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .menu-options .btn-sport,
+  .menu-options .btn-option {
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  .creator-controls {
+    align-items: center;
+  }
+}
+
+/* HUD Buttons */
+.hud {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 15px;
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 2px solid var(--wii-blue);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  z-index: 100;
+}
+
+.hud-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg-medium);
+  color: var(--fg-light);
+  min-width: 120px;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid var(--fg-muted);
+}
+
+.hud-btn:hover {
+  background: var(--wii-blue);
+  border-color: var(--wii-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(58, 151, 217, 0.4);
+}
+
+.hud-btn:active {
+  transform: translateY(0);
+  background: var(--wii-blue-dark);
+}
+
+.hud-btn.hud-activated {
+  background: var(--wii-yellow);
+  color: var(--bg-dark);
+  transform: scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.hud-btn:focus-visible {
+  outline: 2px solid var(--wii-yellow);
+  outline-offset: 2px;
+}
+
+/* Sport-specific HUD groupings */
+.hud-pitching,
+.hud-batting,
+.hud-clubs,
+.hud-spin,
+.hud-power {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.hud-pitching > .hud-btn,
+.hud-batting > .hud-btn,
+.hud-clubs > .hud-btn,
+.hud-spin > .hud-btn,
+.hud-power > .hud-btn {
+  min-width: 110px;
+}
+
+/* Tennis HUD */
+.tennis-btn {
+  background: var(--wii-green);
+  color: white;
+  border-color: var(--wii-green);
+}
+
+.tennis-btn:hover {
+  background: #54c466;
+  box-shadow: 0 4px 12px rgba(115, 173, 33, 0.4);
+}
+
+/* Baseball HUD */
+.baseball-btn {
+  background: var(--wii-red);
+  color: white;
+  border-color: var(--wii-red);
+}
+
+.baseball-btn:hover {
+  background: #e84118;
+  box-shadow: 0 4px 12px rgba(228, 26, 28, 0.4);
+}
+
+/* Golf HUD */
+.golf-btn {
+  background: var(--wii-orange);
+  color: white;
+  border-color: var(--wii-orange);
+}
+
+.golf-btn:hover {
+  background: #ff7c40;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+/* Bowling HUD */
+.bowling-btn {
+  background: var(--wii-blue);
+  color: white;
+  border-color: var(--wii-blue);
+}
+
+.bowling-btn:hover {
+  background: #5a9fd8;
+  box-shadow: 0 4px 12px rgba(58, 151, 217, 0.4);
+}
+
+/* Boxing HUD */
+.box-btn {
+  background: var(--wii-red);
+  color: white;
+  border-color: var(--wii-red);
+}
+
+.box-btn:hover {
+  background: #e84118;
+  box-shadow: 0 4px 12px rgba(228, 26, 28, 0.4);
+}

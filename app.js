@@ -53,13 +53,48 @@ const propMat = new THREE.MeshStandardMaterial({ color: 0x676c62, roughness: 0.8
 const whiteText = new THREE.MeshBasicMaterial({ color: 0xefeff2 });
 
 const colliders = [];
+let arenaGroup = null;
+let currentMapId = 'iron-yard';
 const armorCrates = [];
 const bots = [];
+const practicePlayerCount = document.querySelector('#practice-player-count');
+const hudPlayerCount = document.querySelector('#hud-player-count');
 const tracers = [];
 const clock = new THREE.Clock();
 
 const keys = {};
 const pointer = { active: false, sensitivity: 0.0028 };
+const touchInput = { moveX: 0, moveY: 0, sprinting: false, crouched: false, firing: false, lookX: 0, lookY: 0 };
+const touchUi = {
+  movePad: document.querySelector('#move-pad'),
+  stick: document.querySelector('#stick-knob'),
+  lookZone: document.querySelector('#touch-look-zone'),
+  sprint: document.querySelector('#touch-sprint'),
+  crouch: document.querySelector('#touch-crouch'),
+  reload: document.querySelector('#touch-reload'),
+  fire: document.querySelector('#touch-fire'),
+};
+let movePointerId = null;
+let lookPointer = null;
+const heldTouchPointers = new Map();
+function clearTouchControls() {
+  touchInput.moveX = 0;
+  touchInput.moveY = 0;
+  touchInput.sprinting = false;
+  touchInput.crouched = false;
+  touchInput.firing = false;
+  touchInput.lookX = 0;
+  touchInput.lookY = 0;
+  movePointerId = null;
+  lookPointer = null;
+  heldTouchPointers.clear();
+  mouse.firing = false;
+  if (touchUi.stick) touchUi.stick.style.transform = 'translate(0px, 0px)';
+  [touchUi.sprint, touchUi.crouch, touchUi.fire].forEach((button) => {
+    button?.classList.remove('active');
+    button?.setAttribute('aria-pressed', 'false');
+  });
+}
 const ui = {
   scoreBlue: document.querySelector('#blue-score'),
   scoreRed: document.querySelector('#red-score'),
@@ -107,6 +142,102 @@ const game = {
   roundId: 0,
 };
 
+const weapons = [
+  { id: 'pistol', name: 'SIDEARM 9MM', short: 'SIDEARM', caliber: '9MM', category: 'PISTOL', unlockLevel: 1, magazine: 12, reserve: 48, damage: 38, fireRate: 0.32, reload: 1.05, range: 30, aimDot: 0.965, hitChance: 0.82, pellets: 1, mode: 'SEMI-AUTO' },
+  { id: 'rifle', name: 'RANGER 5.56', short: 'RANGER', caliber: '5.56', category: 'ASSAULT RIFLE', unlockLevel: 4, magazine: 30, reserve: 120, damage: 42, fireRate: 0.12, reload: 1.25, range: 34, aimDot: 0.96, hitChance: 0.85, pellets: 1, mode: 'FULL AUTO' },
+  { id: 'shotgun', name: 'BREACH 12G', short: 'BREACH', caliber: '12G', category: 'SHOTGUN', unlockLevel: 8, magazine: 6, reserve: 30, damage: 23, fireRate: 0.72, reload: 1.65, range: 15, aimDot: 0.91, hitChance: 0.74, pellets: 6, mode: 'PUMP ACTION' },
+  { id: 'sniper', name: 'LONGSHOT .308', short: 'LONGSHOT', caliber: '.308', category: 'SNIPER RIFLE', unlockLevel: 12, magazine: 5, reserve: 25, damage: 100, fireRate: 1.05, reload: 1.8, range: 60, aimDot: 0.99, hitChance: 0.96, pellets: 1, mode: 'BOLT ACTION' },
+];
+
+const progression = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('frontline-progression') || '{}');
+    return { level: Math.max(1, Number(saved.level) || 1), xp: Math.max(0, Number(saved.xp) || 0), weaponId: saved.weaponId || 'pistol' };
+  } catch {
+    return { level: 1, xp: 0, weaponId: 'pistol' };
+  }
+})();
+
+function xpForNextLevel(level = progression.level) {
+  return 100 + (level - 1) * 25;
+}
+
+function saveProgression() {
+  localStorage.setItem('frontline-progression', JSON.stringify(progression));
+}
+
+function getWeapon(id = progression.weaponId) {
+  return weapons.find((weapon) => weapon.id === id) || weapons[0];
+}
+
+function renderArsenal() {
+  const arsenal = document.querySelector('#arsenal');
+  if (!arsenal) return;
+  const active = getWeapon();
+  const xpNeeded = xpForNextLevel();
+  document.querySelector('#profile-level').textContent = `LV. ${progression.level}`;
+  document.querySelector('#menu-weapon-name').textContent = active.name;
+  document.querySelector('#menu-weapon-type').innerHTML = `${active.category} <i>•</i> LV. ${active.unlockLevel}+`;
+  document.querySelector('#menu-weapon-ammo').innerHTML = `${active.magazine} <span>/ ${active.reserve}</span>`;
+  document.querySelector('#xp-caption').textContent = `${progression.xp} / ${xpNeeded} XP TO NEXT LEVEL`;
+  document.querySelector('#xp-progress').style.width = `${Math.min(100, progression.xp / xpNeeded * 100)}%`;
+  arsenal.innerHTML = weapons.map((weapon, index) => {
+    const unlocked = progression.level >= weapon.unlockLevel;
+    return `<button type="button" class="arsenal-item${weapon.id === active.id ? ' selected' : ''}${unlocked ? '' : ' locked'}" data-weapon="${weapon.id}" ${unlocked ? '' : 'disabled'} title="${unlocked ? `Select ${weapon.name}` : `Unlock at level ${weapon.unlockLevel}`}" aria-label="${unlocked ? weapon.name : `${weapon.name}, locked until level ${weapon.unlockLevel}`}"><b>${index + 1}</b><span>${weapon.short}</span><small>${unlocked ? weapon.category : `LV. ${weapon.unlockLevel}`}</small></button>`;
+  }).join('');
+  arsenal.querySelectorAll('[data-weapon]:not(:disabled)').forEach((button) => {
+    button.addEventListener('click', () => selectWeapon(button.dataset.weapon));
+  });
+  updateWeaponHud();
+}
+
+function updateWeaponHud() {
+  const weapon = getWeapon();
+  const name = document.querySelector('#hud-weapon-name');
+  if (name) name.innerHTML = `${weapon.short} <span>${weapon.caliber}</span>`;
+  const reserve = document.querySelector('#reserve-ammo');
+  if (reserve) reserve.textContent = String(game.reserveAmmo);
+  const type = document.querySelector('#hud-weapon-type');
+  if (type) type.innerHTML = `${weapon.category} <span>•</span> ${weapon.mode}`;
+  const key = document.querySelector('#weapon-key');
+  if (key) key.textContent = String(weapons.indexOf(weapon) + 1);
+}
+
+function selectWeapon(id, announce = true) {
+  const weapon = weapons.find((item) => item.id === id);
+  if (!weapon || progression.level < weapon.unlockLevel) return;
+  progression.weaponId = id;
+  saveProgression();
+  operatorPreview?.configureWeapon(id);
+  if (game.playing) {
+    game.ammo = weapon.magazine;
+    game.reserveAmmo = weapon.reserve;
+    game.reloadTimer = 0;
+    game.fireCooldown = 0;
+    ui.reload.classList.remove('active');
+    updateHud();
+  }
+  renderArsenal();
+  if (announce) toast(`${weapon.name} EQUIPPED`);
+}
+
+function grantXP(amount) {
+  progression.xp += amount;
+  let leveled = false;
+  while (progression.xp >= xpForNextLevel()) {
+    progression.xp -= xpForNextLevel();
+    progression.level += 1;
+    leveled = true;
+  }
+  saveProgression();
+  renderArsenal();
+  if (leveled) {
+    const newlyUnlocked = weapons.filter((weapon) => weapon.unlockLevel === progression.level);
+    toast(newlyUnlocked.length ? `LEVEL ${progression.level} · ${newlyUnlocked[0].name} UNLOCKED` : `LEVEL ${progression.level} REACHED`);
+  }
+  return leveled;
+}
+
 const player = {
   pos: new THREE.Vector3(0, 1.68, 22),
   vel: new THREE.Vector3(),
@@ -118,9 +249,47 @@ const player = {
   canShoot: true,
 };
 
-const enemySpawnPoints = [
-  [-24, 24], [-16, -22], [0, -24], [19, -18], [22, 18], [-8, 20], [1, 25], [-26, 4], [25, 2], [12, 11],
-];
+const maps = {
+  'iron-yard': {
+    name: 'IRON YARD', descriptor: 'INDUSTRIAL DEPOT',
+    floor: 0x5f625d, wall: 0x8b948d, prop: 0x676c62, fog: 0x6c7a75,
+    spawns: [[-24, 24], [-16, -22], [0, -24], [19, -18], [22, 18], [-8, 20], [1, 25], [-26, 4], [25, 2], [12, 11]],
+    buildings: [[-19, 4.2, -22, 18, 8.4, 7.5], [20, 4, -20, 12, 8, 18]],
+    containers: [[-13, 0], [12, 10], [21, 4], [-21, 15], [5, -14], [-9, -16]],
+    barriers: [[0, 2, 8, 1.2, 2.4], [-4, 8, 5, 1.3, 2.2], [5, -9, 4.5, 1.3, 2.2], [18, -6, 3, 1.2, 2.1], [-16, -10, 3.1, 1.3, 2.2], [7, 20, 5, 1.2, 2.0], [-9, 22, 4, 1.2, 2.1], [19, 16, 3.7, 1.2, 2.1]],
+  },
+  dustline: {
+    name: 'DUSTLINE', descriptor: 'DESERT CHECKPOINT',
+    floor: 0x897957, wall: 0xb9a77f, prop: 0x8a6846, fog: 0x9a8868,
+    spawns: [[-25, 22], [-19, -23], [-2, -25], [22, -19], [25, 20], [-9, 24], [4, 26], [-27, 5], [26, 0], [14, 14]],
+    buildings: [[-20, 3.4, -21, 15, 6.8, 11], [18, 3.8, -20, 16, 7.6, 13]],
+    containers: [[-12, 1], [11, 12], [21, 5], [-21, 15], [5, -12], [-8, -16]],
+    barriers: [[-1, 1, 7, 1.4, 2.5], [-5, 9, 4, 1.2, 2], [6, -7, 5, 1.4, 2.3], [18, -5, 4, 1.2, 2], [-16, -8, 4, 1.3, 2.1], [8, 20, 4, 1.2, 1.9], [-9, 21, 5, 1.2, 2], [19, 15, 4, 1.4, 2.2]],
+  },
+  frostline: {
+    name: 'FROSTLINE', descriptor: 'ARCTIC FORWARD BASE',
+    floor: 0x778387, wall: 0xb6c4c5, prop: 0x59696d, fog: 0x879a9d,
+    spawns: [[-24, 25], [-17, -23], [1, -25], [20, -17], [23, 19], [-7, 21], [2, 26], [-27, 3], [26, 1], [13, 12]],
+    buildings: [[-20, 4.5, -21, 17, 9, 9], [19, 4.3, -19, 14, 8.6, 16]],
+    containers: [[-14, 2], [11, 11], [21, 4], [-21, 16], [6, -13], [-8, -17]],
+    barriers: [[0, 2, 9, 1.3, 2.3], [-5, 8, 4, 1.2, 2.1], [5, -9, 5, 1.4, 2.4], [17, -5, 3, 1.3, 2], [-17, -9, 4, 1.2, 2], [8, 19, 5, 1.2, 2], [-9, 22, 4, 1.4, 2.2], [19, 15, 4, 1.2, 2]],
+  },
+};
+
+function mapInfo(mapId = currentMapId) {
+  return maps[mapId] || maps['iron-yard'];
+}
+
+function updatePlayerCounts() {
+  const activeBots = bots.filter((bot) => bot.alive).length;
+  const countLabel = `1 HUMAN · ${activeBots}/${bots.length} AI ACTIVE`;
+  if (practicePlayerCount && practicePlayerCount.textContent !== countLabel) {
+    practicePlayerCount.textContent = countLabel;
+  }
+  if (hudPlayerCount && hudPlayerCount.textContent !== countLabel) {
+    hudPlayerCount.textContent = countLabel;
+  }
+}
 
 function spawnPointsForScreen() {
   const points = [];
@@ -299,49 +468,297 @@ function createWeaponModel() {
 
 const rifle = createWeaponModel();
 
+const previewCanvas = document.querySelector('#operator-preview-canvas');
+let operatorPreview = null;
+
+function createOperatorPreview() {
+  if (!previewCanvas) return null;
+  const previewScene = new THREE.Scene();
+  const previewCamera = new THREE.PerspectiveCamera(34, 1, 0.1, 30);
+  previewCamera.position.set(0, 1.28, 5.3);
+  previewCamera.lookAt(0, 1.08, 0);
+  const previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, alpha: true, antialias: true });
+  previewRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  previewRenderer.setClearColor(0x000000, 0);
+  previewRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  previewRenderer.toneMappingExposure = 1.12;
+  previewScene.add(new THREE.HemisphereLight(0xe5f0e5, 0x252b27, 2.1));
+  const keyLight = new THREE.DirectionalLight(0xffedcf, 3.1);
+  keyLight.position.set(-3, 5, 4);
+  previewScene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight(0x9bbbe0, 2.2);
+  rimLight.position.set(3, 3, -3);
+  previewScene.add(rimLight);
+
+  const operator = new THREE.Group();
+  previewScene.add(operator);
+  const mats = {
+    cloth: new THREE.MeshStandardMaterial({ color: 0x4b5845, roughness: 0.96 }),
+    clothDark: new THREE.MeshStandardMaterial({ color: 0x343f35, roughness: 0.98 }),
+    webbing: new THREE.MeshStandardMaterial({ color: 0x59604a, roughness: 0.92 }),
+    armor: new THREE.MeshStandardMaterial({ color: 0x252e2b, roughness: 0.7, metalness: 0.18 }),
+    armorEdge: new THREE.MeshStandardMaterial({ color: 0x536057, roughness: 0.65, metalness: 0.25 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x171d1c, roughness: 0.68, metalness: 0.2 }),
+    rubber: new THREE.MeshStandardMaterial({ color: 0x202522, roughness: 1 }),
+    skin: new THREE.MeshStandardMaterial({ color: 0xa9775e, roughness: 0.88 }),
+    lens: new THREE.MeshStandardMaterial({ color: 0x526d71, roughness: 0.2, metalness: 0.65, transparent: true, opacity: 0.78 }),
+    accent: new THREE.MeshStandardMaterial({ color: 0x9b624c, roughness: 0.82 }),
+    gun: new THREE.MeshStandardMaterial({ color: 0x202625, roughness: 0.42, metalness: 0.72 }),
+    gunPolymer: new THREE.MeshStandardMaterial({ color: 0x343c38, roughness: 0.75, metalness: 0.18 }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x162323, roughness: 0.16, metalness: 0.7 }),
+  };
+  const box = (parent, size, material, pos, rot = [0, 0, 0]) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+    mesh.position.set(...pos);
+    mesh.rotation.set(...rot);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+  const sphere = (parent, scale, material, pos) => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), material);
+    mesh.scale.set(...scale);
+    mesh.position.set(...pos);
+    mesh.castShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+  const limb = (parent, start, end, radius, material, radiusEnd = radius) => {
+    const a = new THREE.Vector3(...start);
+    const b = new THREE.Vector3(...end);
+    const delta = b.clone().sub(a);
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusEnd, radius, delta.length(), 12), material);
+    mesh.position.copy(a.add(b).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
+    mesh.userData.baseLength = delta.length();
+    mesh.castShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+  const positionLimb = (mesh, start, end) => {
+    const a = new THREE.Vector3(...start);
+    const b = new THREE.Vector3(...end);
+    const delta = b.clone().sub(a);
+    mesh.position.copy(a.add(b).multiplyScalar(0.5));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
+    mesh.scale.y = delta.length() / mesh.userData.baseLength;
+  };
+
+  // Layered combat uniform and plate carrier, with visible seams, straps and pouches.
+  box(operator, [0.7, 0.86, 0.34], mats.cloth, [0, 1.32, 0]);
+  box(operator, [0.58, 0.62, 0.16], mats.armor, [0, 1.37, -0.19]);
+  box(operator, [0.61, 0.08, 0.18], mats.armorEdge, [0, 1.7, -0.19]);
+  box(operator, [0.1, 0.62, 0.045], mats.webbing, [-0.23, 1.36, -0.28], [0, 0, -0.08]);
+  box(operator, [0.1, 0.62, 0.045], mats.webbing, [0.23, 1.36, -0.28], [0, 0, 0.08]);
+  for (const x of [-0.2, 0, 0.2]) {
+    box(operator, [0.14, 0.21, 0.11], mats.armorEdge, [x, 1.22, -0.3]);
+    box(operator, [0.13, 0.2, 0.12], mats.black, [x, 1.02, -0.2]);
+    box(operator, [0.018, 0.15, 0.015], mats.webbing, [x + 0.045, 1.22, -0.365]);
+  }
+  box(operator, [0.74, 0.13, 0.15], mats.clothDark, [0, 0.84, 0]);
+  box(operator, [0.77, 0.075, 0.11], mats.armor, [0, 0.79, -0.02]);
+  for (const side of [-1, 1]) {
+    const x = side * 0.18;
+    box(operator, [0.25, 0.75, 0.27], mats.clothDark, [x, 0.43, 0]);
+    box(operator, [0.255, 0.2, 0.09], mats.armor, [x, 0.46, -0.16]);
+    box(operator, [0.19, 0.28, 0.08], mats.armorEdge, [x, 0.25, -0.15]);
+    box(operator, [0.29, 0.16, 0.4], mats.rubber, [x, 0.1, -0.05]);
+    box(operator, [0.3, 0.045, 0.41], mats.black, [x, 0.035, -0.05]);
+    for (let lace = 0; lace < 4; lace++) box(operator, [0.12, 0.012, 0.018], mats.webbing, [x, 0.14 + lace * 0.025, -0.19]);
+    box(operator, [0.11, 0.25, 0.06], mats.cloth, [x, 0.59, -0.14]);
+  }
+  const previewArms = [];
+  for (const side of [-1, 1]) {
+    const shoulder = [side * 0.4, 1.62, 0.01];
+    const elbow = side === 1 ? [0.32, 1.42, -0.2] : [-0.25, 1.43, -0.24];
+    const hand = side === 1 ? [0.23, 1.14, -0.51] : [-0.02, 1.15, -0.66];
+    sphere(operator, [0.2, 0.17, 0.21], mats.armor, shoulder);
+    limb(operator, [side * 0.43, 1.58, 0], elbow, 0.115, mats.cloth, 0.105);
+    sphere(operator, [0.12, 0.12, 0.12], mats.armorEdge, elbow);
+    const forearm = limb(operator, elbow, hand, 0.09, mats.cloth, 0.075);
+    const glove = sphere(operator, [0.075, 0.065, 0.09], mats.black, hand);
+    previewArms.push({ side, elbow, forearm, glove });
+    box(operator, [0.12, 0.08, 0.04], mats.accent, [side * 0.43, 1.62, -0.16]);
+  }
+  // Balaclava lower face, ballistic eye protection, helmet shell and side rails.
+  sphere(operator, [0.18, 0.21, 0.17], mats.skin, [0, 2.0, 0]);
+  const previewSmirk = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.075, 1.925, -0.153),
+    new THREE.Vector3(-0.035, 1.908, -0.169),
+    new THREE.Vector3(0.018, 1.911, -0.169),
+    new THREE.Vector3(0.075, 1.941, -0.153),
+  ]);
+  const mouth = new THREE.Mesh(new THREE.TubeGeometry(previewSmirk, 18, 0.008, 6, false), mats.clothDark);
+  mouth.castShadow = true;
+  operator.add(mouth);
+  sphere(operator, [0.012, 0.012, 0.008], mats.accent, [0.075, 1.941, -0.154]);
+  sphere(operator, [0.235, 0.17, 0.23], mats.armor, [0, 2.14, 0]);
+  box(operator, [0.49, 0.055, 0.14], mats.armorEdge, [0, 2.08, -0.12]);
+  box(operator, [0.37, 0.105, 0.035], mats.black, [0, 2.03, -0.17]);
+  box(operator, [0.33, 0.07, 0.025], mats.lens, [0, 2.03, -0.195]);
+  box(operator, [0.42, 0.035, 0.035], mats.armor, [0, 2.29, -0.02]);
+  for (const side of [-1, 1]) {
+    box(operator, [0.045, 0.18, 0.1], mats.armorEdge, [side * 0.22, 2.02, -0.02]);
+    box(operator, [0.06, 0.12, 0.18], mats.armor, [side * 0.24, 2.08, 0.04]);
+  }
+
+  const weapon = new THREE.Group();
+  operator.add(weapon);
+  const configureWeapon = (id) => {
+    weapon.children.forEach((child) => child.geometry?.dispose());
+    weapon.clear();
+    const active = getWeapon(id);
+    const isPistol = id === 'pistol';
+    const isShotgun = id === 'shotgun';
+    const isSniper = id === 'sniper';
+    previewArms.forEach((arm) => {
+      const hand = isPistol
+        ? (arm.side === 1 ? [0.23, 1.14, -0.51] : [-0.2, 1.37, -0.28])
+        : (arm.side === 1 ? [0.23, 1.14, -0.51] : [-0.02, 1.15, -0.66]);
+      positionLimb(arm.forearm, arm.elbow, hand);
+      arm.glove.position.set(...hand);
+    });
+    const bodyLength = isPistol ? 0.38 : isShotgun ? 0.76 : isSniper ? 0.88 : 0.68;
+    const bodyWidth = isPistol ? 0.12 : 0.17;
+    const receiver = box(weapon, [bodyWidth, isPistol ? 0.14 : 0.19, bodyLength], mats.gun, [0, 0, -bodyLength * 0.22]);
+    receiver.material = mats.gun;
+    const barrelLength = isPistol ? 0.24 : isShotgun ? 0.5 : isSniper ? 0.7 : 0.48;
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(isShotgun ? 0.032 : 0.022, isShotgun ? 0.032 : 0.026, barrelLength, 14), mats.gun);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 0.015, -bodyLength * 0.55 - barrelLength * 0.43);
+    barrel.castShadow = true;
+    weapon.add(barrel);
+    box(weapon, [bodyWidth * 0.72, isPistol ? 0.23 : 0.25, 0.12], mats.gunPolymer, [0, -0.17, 0.02], [0.24, 0, 0]);
+    if (!isPistol) {
+      box(weapon, [bodyWidth * 1.15, 0.14, 0.3], mats.gunPolymer, [0, -0.01, bodyLength * 0.43]);
+      box(weapon, [0.09, 0.13, 0.24], mats.gunPolymer, [0, -0.21, -0.12]);
+      box(weapon, [0.27, 0.045, 0.055], mats.gun, [0, 0.13, -bodyLength * 0.36]);
+      for (let rail = 0; rail < 4; rail++) box(weapon, [0.025, 0.018, 0.055], mats.armorEdge, [0, 0.16, -bodyLength * 0.34 - rail * 0.065]);
+      const opticLength = isSniper ? 0.32 : 0.16;
+      box(weapon, [0.09, isSniper ? 0.13 : 0.1, opticLength], mats.black, [0, 0.25, -bodyLength * 0.22]);
+      const opticGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.012, 16), mats.glass);
+      opticGlass.rotation.x = Math.PI / 2;
+      opticGlass.position.set(0, 0.25, -bodyLength * 0.22 - opticLength * 0.52);
+      weapon.add(opticGlass);
+      if (isShotgun) box(weapon, [0.09, 0.1, 0.42], mats.gunPolymer, [0, -0.17, -0.43]);
+      if (isSniper) {
+        box(weapon, [0.13, 0.08, 0.25], mats.gunPolymer, [0, -0.13, bodyLength * 0.45]);
+        box(weapon, [0.08, 0.025, 0.16], mats.armorEdge, [0, -0.08, bodyLength * 0.45]);
+      }
+    } else {
+      box(weapon, [0.09, 0.065, 0.14], mats.gunPolymer, [0, 0.1, -0.08]);
+      box(weapon, [0.11, 0.03, 0.12], mats.black, [0, 0.145, -0.08]);
+    }
+    box(weapon, [0.045, 0.045, 0.065], mats.armorEdge, [0, 0.04, -bodyLength * 0.48]);
+    weapon.position.set(isPistol ? 0.22 : 0.12, 1.31, -0.53);
+    const label = document.querySelector('#preview-weapon-name');
+    if (label) label.textContent = active.name;
+  };
+  configureWeapon(progression.weaponId);
+  return { scene: previewScene, camera: previewCamera, renderer: previewRenderer, operator, configureWeapon };
+}
+
+function resizeOperatorPreview() {
+  if (!operatorPreview || !previewCanvas) return;
+  const width = Math.max(1, previewCanvas.clientWidth);
+  const height = Math.max(1, previewCanvas.clientHeight);
+  if (operatorPreview.width === width && operatorPreview.height === height) return;
+  operatorPreview.width = width;
+  operatorPreview.height = height;
+  operatorPreview.renderer.setSize(width, height, false);
+  operatorPreview.camera.aspect = width / height;
+  operatorPreview.camera.updateProjectionMatrix();
+}
+
 function createEnemy(index) {
   const team = 'red';
   const group = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x9f5d4d, roughness: 0.7, metalness: 0.12 });
-  const headMat = new THREE.MeshStandardMaterial({ color: 0xd2b296, roughness: 0.9, metalness: 0.02 });
-  const weaponMat = new THREE.MeshStandardMaterial({ color: 0x1d1e1f, roughness: 0.52, metalness: 0.7 });
+  const uniformMat = new THREE.MeshStandardMaterial({ color: 0x485448, roughness: 0.96, metalness: 0.02 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x3d483d, roughness: 0.98, metalness: 0.01 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0x303a34, roughness: 0.66, metalness: 0.18 });
+  const armorEdgeMat = new THREE.MeshStandardMaterial({ color: 0x697361, roughness: 0.58, metalness: 0.28 });
+  const fabricDetailMat = new THREE.MeshStandardMaterial({ color: 0x69715b, roughness: 0.92, metalness: 0.04 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x242a26, roughness: 0.9, metalness: 0.04 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xb9886d, roughness: 0.92, metalness: 0 });
+  const faceDetailMat = new THREE.MeshStandardMaterial({ color: 0x593a32, roughness: 0.8, metalness: 0 });
+  const visorMat = new THREE.MeshStandardMaterial({ color: 0x9ab8b7, roughness: 0.2, metalness: 0.62, transparent: true, opacity: 0.58 });
+  const unitMarkMat = new THREE.MeshStandardMaterial({ color: 0x96594b, roughness: 0.82, metalness: 0.04 });
+  const weaponMat = new THREE.MeshStandardMaterial({ color: 0x1d2321, roughness: 0.52, metalness: 0.7 });
 
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.1, 0.38), bodyMat);
-  torso.position.y = 1.2;
-  torso.castShadow = true;
-  torso.receiveShadow = true;
-  group.add(torso);
+  const addPart = (geometry, material, position, rotation = null) => {
+    const part = new THREE.Mesh(geometry, material);
+    part.position.set(...position);
+    if (rotation) part.rotation.set(...rotation);
+    part.castShadow = true;
+    part.receiveShadow = true;
+    group.add(part);
+    return part;
+  };
+  const addBox = (size, material, position, rotation = null) => addPart(new THREE.BoxGeometry(...size), material, position, rotation);
+  const addSphere = (size, material, position) => {
+    const part = addPart(new THREE.SphereGeometry(1, 16, 12), material, position);
+    part.scale.set(...size);
+    return part;
+  };
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 18), headMat);
-  head.position.y = 2.0;
-  head.castShadow = true;
-  group.add(head);
+  // Field uniform under a fitted plate carrier: all gear here is visual only.
+  addBox([0.72, 1.04, 0.34], uniformMat, [0, 1.2, 0]);
+  addBox([0.56, 0.64, 0.075], armorMat, [0, 1.3, -0.205]);
+  addBox([0.5, 0.08, 0.09], armorEdgeMat, [0, 1.65, -0.215]);
+  addBox([0.12, 0.64, 0.06], fabricDetailMat, [-0.24, 1.3, -0.25], [0, 0, -0.08]);
+  addBox([0.12, 0.64, 0.06], fabricDetailMat, [0.24, 1.3, -0.25], [0, 0, 0.08]);
+  for (const side of [-1, 1]) {
+    addBox([0.15, 0.22, 0.1], armorMat, [side * 0.31, 1.34, -0.18]);
+    addBox([0.14, 0.18, 0.11], armorEdgeMat, [side * 0.2, 1.02, -0.25]);
+    addBox([0.08, 0.23, 0.1], unitMarkMat, [side * 0.39, 1.48, -0.1]);
+  }
+  addBox([0.62, 0.13, 0.08], armorMat, [0, 0.81, -0.03]);
+  addBox([0.76, 0.1, 0.1], armorMat, [0, 0.76, 0]);
 
-  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.8, 0.16), bodyMat);
-  armL.position.set(-0.52, 1.2, 0);
-  armL.rotation.z = -0.5;
-  armL.castShadow = true;
-  group.add(armL);
+  // Sleeved arms, shoulder shells, and restrained unit-color tabs.
+  for (const side of [-1, 1]) {
+    addPart(new THREE.CylinderGeometry(0.115, 0.13, 0.64, 10), uniformMat, [side * 0.47, 1.23, 0], [0, 0, side * 0.12]);
+    addSphere([0.19, 0.16, 0.2], armorMat, [side * 0.4, 1.58, 0]);
+    addBox([0.12, 0.09, 0.04], unitMarkMat, [side * 0.45, 1.59, -0.16]);
+    addBox([0.13, 0.16, 0.15], armorEdgeMat, [side * 0.49, 1.05, -0.01]);
+  }
 
-  const armR = armL.clone();
-  armR.position.x = 0.52;
-  armR.rotation.z = 0.5;
-  group.add(armR);
+  // Separate field trousers, hard kneepads with fasteners, shin guards, and ordinary combat boots.
+  for (const side of [-1, 1]) {
+    const x = side * 0.18;
+    addBox([0.23, 0.72, 0.25], pantsMat, [x, 0.45, 0]);
+    addBox([0.25, 0.19, 0.08], armorMat, [x, 0.48, -0.16]);
+    addBox([0.17, 0.29, 0.075], armorEdgeMat, [x, 0.29, -0.145]);
+    addSphere([0.025, 0.025, 0.018], fabricDetailMat, [x - 0.075, 0.49, -0.208]);
+    addSphere([0.025, 0.025, 0.018], fabricDetailMat, [x + 0.075, 0.49, -0.208]);
+    addBox([0.27, 0.17, 0.4], bootMat, [x, 0.11, -0.045]);
+    addBox([0.28, 0.045, 0.41], armorEdgeMat, [x, 0.035, -0.045]);
+    for (let lace = 0; lace < 3; lace++) {
+      addBox([0.1, 0.012, 0.018], fabricDetailMat, [x, 0.16 + lace * 0.025, -0.18]);
+    }
+  }
 
-  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 0.2), bodyMat);
-  legL.position.set(-0.18, 0.45, 0);
-  legL.castShadow = true;
-  group.add(legL);
+  // Exposed lower face, eye-level glass visor, and protective helmet shell.
+  addSphere([0.18, 0.21, 0.17], skinMat, [0, 1.99, -0.005]);
+  const smirkCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.078, 1.918, -0.154),
+    new THREE.Vector3(-0.04, 1.902, -0.171),
+    new THREE.Vector3(0.018, 1.906, -0.174),
+    new THREE.Vector3(0.078, 1.936, -0.154),
+  ]);
+  addPart(new THREE.TubeGeometry(smirkCurve, 16, 0.008, 6, false), faceDetailMat, [0, 0, 0]);
+  addSphere([0.012, 0.012, 0.008], unitMarkMat, [0.078, 1.936, -0.156]);
+  addSphere([0.235, 0.17, 0.23], armorMat, [0, 2.13, 0.005]);
+  addBox([0.46, 0.055, 0.12], armorEdgeMat, [0, 2.075, -0.12]);
+  addBox([0.355, 0.105, 0.035], armorMat, [0, 2.02, -0.174]);
+  addBox([0.315, 0.068, 0.022], visorMat, [0, 2.02, -0.198]);
+  addBox([0.08, 0.025, 0.025], fabricDetailMat, [0, 1.9, -0.17]);
+  for (const side of [-1, 1]) addBox([0.045, 0.12, 0.08], armorEdgeMat, [side * 0.215, 2.02, -0.02]);
 
-  const legR = legL.clone();
-  legR.position.x = 0.18;
-  group.add(legR);
-
-  const gun = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.13, 0.54), weaponMat);
-  gun.position.set(0.45, 1.2, -0.18);
-  gun.rotation.x = -0.35;
+  const gun = addBox([0.14, 0.13, 0.54], weaponMat, [0.45, 1.2, -0.18], [-0.35, 0, 0]);
   gun.castShadow = true;
-  group.add(gun);
 
   const spawn = enemySpawnPoints[index % enemySpawnPoints.length];
   group.position.set(spawn[0], 0, spawn[1]);
@@ -377,14 +794,15 @@ function resetBots() {
 }
 
 function resetRound() {
+  clearTouchControls();
   game.roundId += 1;
   game.state = 'playing';
   game.playing = true;
   game.paused = false;
   game.over = false;
   game.matchTime = 600;
-  game.ammo = 30;
-  game.reserveAmmo = 120;
+  game.ammo = getWeapon().magazine;
+  game.reserveAmmo = getWeapon().reserve;
   game.health = 100;
   game.kills = 0;
   game.deaths = 0;
@@ -408,12 +826,14 @@ function resetRound() {
   resultScreen.classList.add('hidden');
   lobbyScreen.classList.add('hidden');
   startScreen.classList.add('hidden');
-  document.body.requestPointerLock?.();
 }
 
 function showResult(win) {
+  if (game.over) return;
+  clearTouchControls();
   game.over = true;
   game.playing = false;
+  grantXP(50 + game.kills * 10);
   hud.classList.add('hidden');
   document.exitPointerLock?.();
   resultScreen.classList.remove('hidden');
@@ -426,10 +846,12 @@ function showResult(win) {
 }
 
 function updateHud() {
+  updatePlayerCounts();
   const healthPct = Math.max(0, Math.min(100, game.health));
   ui.healthBar.style.width = `${healthPct}%`;
   ui.healthNum.textContent = String(Math.ceil(healthPct));
   ui.ammo.textContent = String(game.ammo);
+  updateWeaponHud();
   ui.scoreBlue.textContent = String(game.scoreBlue).padStart(2, '0');
   ui.scoreRed.textContent = String(game.scoreRed).padStart(2, '0');
   const seconds = Math.max(0, Math.ceil(game.matchTime));
@@ -474,15 +896,16 @@ function intersectsWall(x, z) {
 }
 
 function movePlayer(dt) {
-  const moveInput = new THREE.Vector3();
+  const moveInput = new THREE.Vector3(touchInput.moveX, touchInput.moveY, 0);
   if (keys.KeyA || keys.ArrowLeft) moveInput.x -= 1;
   if (keys.KeyD || keys.ArrowRight) moveInput.x += 1;
   if (keys.KeyW || keys.ArrowUp) moveInput.z -= 1;
   if (keys.KeyS || keys.ArrowDown) moveInput.z += 1;
-  if (moveInput.lengthSq() > 0) moveInput.normalize();
+  if (moveInput.lengthSq() > 1) moveInput.normalize();
 
-  const sprinting = (keys.ShiftLeft || keys.ShiftRight) && moveInput.lengthSq() > 0;
-  const currentSpeed = sprinting ? player.sprintSpeed : player.speed;
+  const sprinting = ((keys.ShiftLeft || keys.ShiftRight) || touchInput.sprinting) && moveInput.lengthSq() > 0;
+  const crouched = touchInput.crouched || keys.ControlLeft || keys.ControlRight;
+  const currentSpeed = (sprinting ? player.sprintSpeed : player.speed) * (crouched ? 0.52 : 1);
   const dir = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
   const strafe = new THREE.Vector3(-dir.z, 0, dir.x);
   const desired = new THREE.Vector3();
@@ -511,14 +934,15 @@ function movePlayer(dt) {
 }
 
 function tryReload() {
-  if (game.reloadTimer > 0 || game.ammo >= 30 || game.reserveAmmo <= 0 || !game.playing) return;
-  game.reloadTimer = 1.25;
+  const weapon = getWeapon();
+  if (game.reloadTimer > 0 || game.ammo >= weapon.magazine || game.reserveAmmo <= 0 || !game.playing) return;
+  game.reloadTimer = weapon.reload;
   ui.reload.classList.add('active');
   toast('RELOADING');
 }
 
 function finishReload() {
-  const needed = 30 - game.ammo;
+  const needed = getWeapon().magazine - game.ammo;
   const used = Math.min(needed, game.reserveAmmo);
   game.ammo += used;
   game.reserveAmmo -= used;
@@ -539,7 +963,8 @@ function doShot() {
   }
   if (game.fireCooldown > 0) return;
 
-  game.fireCooldown = 0.12;
+  const weapon = getWeapon();
+  game.fireCooldown = weapon.fireRate;
   game.ammo -= 1;
   game.shots += 1;
   const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -554,10 +979,10 @@ function doShot() {
     const headPos = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.9, 0));
     const toBot = headPos.clone().sub(origin);
     const dist = toBot.length();
-    if (dist > 34) continue;
+    if (dist > weapon.range) continue;
     const dir = toBot.normalize();
     const dot = forward.dot(dir);
-    if (dot < 0.96) continue;
+    if (dot < weapon.aimDot) continue;
     if (dist < bestDist) {
       bestDist = dist;
       bestHit = { bot, dist, dir, pos: headPos };
@@ -566,9 +991,11 @@ function doShot() {
 
   if (bestHit) {
     const hitRoll = Math.random();
-    const hitChance = 0.85 - Math.min(bestHit.dist / 50, 0.35);
+    const rangeFactor = bestHit.dist / weapon.range;
+    const hitChance = Math.max(0.25, weapon.hitChance - rangeFactor * (weapon.id === 'shotgun' ? 0.42 : 0.18));
     if (hitRoll < hitChance) {
-      bestHit.bot.hp -= 34 + Math.random() * 16;
+      const closeRangeBonus = weapon.id === 'shotgun' ? Math.max(0.18, 1 - rangeFactor * 0.72) : 1;
+      bestHit.bot.hp -= weapon.damage * weapon.pellets * closeRangeBonus * (0.9 + Math.random() * 0.2);
       game.hits += 1;
       addTracers(origin, bestHit.pos, 0xf7f2a8);
       ui.hitMarker.classList.add('active');
@@ -579,7 +1006,8 @@ function doShot() {
         game.kills += 1;
         game.scoreBlue += 1;
         ui.scoreBlue.textContent = String(game.scoreBlue).padStart(2, '0');
-        toast('TARGET ELIMINATED');
+        const leveled = grantXP(35);
+        if (!leveled) toast('TARGET ELIMINATED');
         addKillFeed('YOU', bestHit.bot.id);
       }
     } else {
@@ -672,17 +1100,22 @@ function handleTracers(dt) {
 }
 
 function updateAim() {
-  if (!pointer.active) return;
-  const dx = mouse.deltaX || 0;
-  const dy = mouse.deltaY || 0;
-  player.yaw -= dx * pointer.sensitivity;
-  player.pitch -= dy * pointer.sensitivity;
-  player.pitch = THREE.MathUtils.clamp(player.pitch, -1.5, 1.5);
+  const mouseDX = pointer.active ? mouse.deltaX : 0;
+  const mouseDY = pointer.active ? mouse.deltaY : 0;
+  const dx = mouseDX * pointer.sensitivity + touchInput.lookX;
+  const dy = mouseDY * pointer.sensitivity + touchInput.lookY;
+  mouse.deltaX = 0;
+  mouse.deltaY = 0;
+  touchInput.lookX = 0;
+  touchInput.lookY = 0;
+  if (!dx && !dy) return;
+  player.yaw -= dx;
+  player.pitch = THREE.MathUtils.clamp(player.pitch - dy, -1.5, 1.5);
   camera.rotation.y = player.yaw;
   camera.rotation.x = player.pitch;
 }
 
-const mouse = { deltaX: 0, deltaY: 0 };
+const mouse = { deltaX: 0, deltaY: 0, firing: false };
 window.addEventListener('mousemove', (e) => {
   if (document.pointerLockElement !== canvas && game.playing) return;
   mouse.deltaX = e.movementX || 0;
@@ -692,6 +1125,7 @@ window.addEventListener('mousemove', (e) => {
 document.addEventListener('pointerlockchange', () => {
   pointer.active = document.pointerLockElement === canvas;
   if (!pointer.active && game.playing && !game.over && !game.paused) {
+    clearTouchControls();
     game.paused = true;
     pauseScreen.classList.remove('hidden');
     hud.classList.add('hidden');
@@ -700,8 +1134,11 @@ document.addEventListener('pointerlockchange', () => {
 
 window.addEventListener('keydown', (event) => {
   keys[event.code] = true;
+  const weaponHotkey = { Digit1: 'pistol', Digit2: 'rifle', Digit3: 'shotgun', Digit4: 'sniper' }[event.code];
+  if (weaponHotkey && !event.repeat && progression.level >= getWeapon(weaponHotkey).unlockLevel) selectWeapon(weaponHotkey);
   if (event.code === 'KeyR') tryReload();
   if (event.code === 'Escape' && game.playing && !game.over) {
+    clearTouchControls();
     game.paused = true;
     pauseScreen.classList.remove('hidden');
     hud.classList.add('hidden');
@@ -712,7 +1149,7 @@ window.addEventListener('keydown', (event) => {
       game.paused = !game.paused;
       pauseScreen.classList.toggle('hidden', !game.paused);
       hud.classList.toggle('hidden', game.paused);
-      if (!game.paused) document.body.requestPointerLock?.();
+      if (!game.paused) canvas.requestPointerLock?.();
     }
   }
 });
@@ -720,16 +1157,120 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('keyup', (event) => { keys[event.code] = false; });
 
 canvas.addEventListener('mousedown', (event) => {
-  if (!game.playing || game.paused || game.over) return;
+  if (event.button !== 0 || !game.playing || game.paused || game.over) return;
   if (document.pointerLockElement !== canvas) {
     canvas.requestPointerLock();
     return;
   }
+  mouse.firing = true;
   doShot();
-  if (event.button === 2) return false;
 });
+window.addEventListener('mouseup', () => { mouse.firing = false; });
 
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+
+function updateJoystick(event) {
+  const bounds = touchUi.movePad.getBoundingClientRect();
+  const centerX = bounds.left + bounds.width / 2;
+  const centerY = bounds.top + bounds.height / 2;
+  const maxRadius = bounds.width * 0.34;
+  let dx = event.clientX - centerX;
+  let dy = event.clientY - centerY;
+  const distance = Math.hypot(dx, dy);
+  if (distance > maxRadius) {
+    dx = (dx / distance) * maxRadius;
+    dy = (dy / distance) * maxRadius;
+  }
+  touchInput.moveX = dx / maxRadius;
+  touchInput.moveY = dy / maxRadius;
+  touchUi.stick.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+
+touchUi.movePad.addEventListener('pointerdown', (event) => {
+  if (!game.playing || game.paused || game.over || movePointerId !== null) return;
+  event.preventDefault();
+  movePointerId = event.pointerId;
+  touchUi.movePad.setPointerCapture(event.pointerId);
+  updateJoystick(event);
+});
+touchUi.movePad.addEventListener('pointermove', (event) => {
+  if (event.pointerId === movePointerId) updateJoystick(event);
+});
+function releaseMovePointer(event) {
+  if (event.pointerId !== movePointerId) return;
+  movePointerId = null;
+  touchInput.moveX = 0;
+  touchInput.moveY = 0;
+  touchUi.stick.style.transform = 'translate(0px, 0px)';
+}
+touchUi.movePad.addEventListener('pointerup', releaseMovePointer);
+touchUi.movePad.addEventListener('pointercancel', releaseMovePointer);
+touchUi.movePad.addEventListener('lostpointercapture', releaseMovePointer);
+
+touchUi.lookZone.addEventListener('pointerdown', (event) => {
+  if (!game.playing || game.paused || game.over || lookPointer) return;
+  event.preventDefault();
+  lookPointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  touchUi.lookZone.setPointerCapture(event.pointerId);
+});
+touchUi.lookZone.addEventListener('pointermove', (event) => {
+  if (!lookPointer || event.pointerId !== lookPointer.id) return;
+  event.preventDefault();
+  touchInput.lookX += (event.clientX - lookPointer.x) * 0.0042;
+  touchInput.lookY += (event.clientY - lookPointer.y) * 0.0042;
+  lookPointer.x = event.clientX;
+  lookPointer.y = event.clientY;
+});
+function releaseLookPointer(event) {
+  if (!lookPointer || event.pointerId !== lookPointer.id) return;
+  lookPointer = null;
+}
+touchUi.lookZone.addEventListener('pointerup', releaseLookPointer);
+touchUi.lookZone.addEventListener('pointercancel', releaseLookPointer);
+touchUi.lookZone.addEventListener('lostpointercapture', releaseLookPointer);
+
+function releaseActionPointer(event) {
+  const action = heldTouchPointers.get(event.pointerId);
+  if (!action) return;
+  heldTouchPointers.delete(event.pointerId);
+  touchInput[action] = false;
+  const button = action === 'sprinting' ? touchUi.sprint : action === 'crouched' ? touchUi.crouch : touchUi.fire;
+  button.classList.remove('active');
+  button.setAttribute('aria-pressed', 'false');
+}
+function holdAction(button, action) {
+  button.addEventListener('pointerdown', (event) => {
+    if (!game.playing || game.paused || game.over) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (heldTouchPointers.has(event.pointerId)) return;
+    heldTouchPointers.set(event.pointerId, action);
+    touchInput[action] = true;
+    button.classList.add('active');
+    button.setAttribute('aria-pressed', 'true');
+    button.setPointerCapture(event.pointerId);
+    if (action === 'firing') doShot();
+  });
+  button.addEventListener('pointerup', releaseActionPointer);
+  button.addEventListener('pointercancel', releaseActionPointer);
+  button.addEventListener('lostpointercapture', releaseActionPointer);
+}
+holdAction(touchUi.sprint, 'sprinting');
+holdAction(touchUi.crouch, 'crouched');
+holdAction(touchUi.fire, 'firing');
+touchUi.reload.addEventListener('pointerdown', (event) => {
+  if (!game.playing || game.paused || game.over) return;
+  event.preventDefault();
+  event.stopPropagation();
+  tryReload();
+});
+touchUi.reload.addEventListener('click', (event) => event.preventDefault());
+window.addEventListener('pointerup', releaseActionPointer);
+window.addEventListener('pointercancel', releaseActionPointer);
+window.addEventListener('blur', () => {
+  clearTouchControls();
+  Object.keys(keys).forEach((code) => { keys[code] = false; });
+});
 
 const deployButton = document.querySelector('#deploy');
 const findMatchButton = document.querySelector('#find-match');
@@ -744,6 +1285,88 @@ let selectedMatchType = 'practice';
 let queueInterval = 0;
 let queueTimeout = 0;
 let queueStartedAt = 0;
+
+const friendsList = document.querySelector('#friends-list');
+const friendsNote = document.querySelector('#friends-note');
+const squadList = document.querySelector('#squad-list');
+const partyCount = document.querySelector('#party-count');
+const friendsStorageKey = 'frontline-friends';
+let friends = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(friendsStorageKey) || '[]');
+    return Array.isArray(saved) ? saved.filter((friend) => friend && typeof friend.name === 'string').slice(0, 100).map((friend) => ({
+      name: friend.name.trim().slice(0, 20),
+      invited: Boolean(friend.invited),
+    })).filter((friend) => friend.name) : [];
+  } catch {
+    return [];
+  }
+})();
+
+function saveFriends() {
+  try { localStorage.setItem(friendsStorageKey, JSON.stringify(friends)); } catch { /* Storage may be unavailable. */ }
+}
+
+function makeSquadMember(initial, name, detail, status, extraClass = '') {
+  const row = document.createElement('div');
+  row.className = `squad-member ${extraClass}`.trim();
+  const avatar = document.createElement('div');
+  avatar.className = 'squad-avatar';
+  avatar.textContent = initial;
+  const identity = document.createElement('div');
+  const label = document.createElement('strong');
+  label.textContent = name;
+  const sublabel = document.createElement('small');
+  sublabel.textContent = detail;
+  identity.append(label, sublabel);
+  const state = document.createElement('span');
+  state.className = status === 'READY' ? 'member-ready' : 'slot-dash';
+  state.textContent = status;
+  row.append(avatar, identity, state);
+  return row;
+}
+
+function renderFriends() {
+  friendsList.replaceChildren();
+  const invited = friends.filter((friend) => friend.invited).slice(0, 4);
+  const activePartySize = 1 + invited.length;
+  partyCount.textContent = `${activePartySize} / 5`;
+  squadList.replaceChildren(makeSquadMember('R', 'ROOKIE', 'FIRETEAM LEADER', 'READY', 'squad-you'));
+  invited.forEach((friend) => squadList.append(makeSquadMember(friend.name.slice(0, 1).toUpperCase(), friend.name.toUpperCase(), 'INVITE SENT · LOCAL DEMO', 'PENDING')));
+  for (let slot = activePartySize; slot < 5; slot += 1) {
+    squadList.append(makeSquadMember('＋', 'OPEN SLOT', 'BOT FILL', '—'));
+  }
+
+  friends.forEach((friend) => {
+    const row = document.createElement('div');
+    row.className = 'friend-row';
+    const identity = document.createElement('div');
+    identity.className = 'friend-identity';
+    const avatar = document.createElement('span');
+    avatar.className = 'friend-avatar';
+    avatar.textContent = friend.name.slice(0, 1).toUpperCase();
+    const name = document.createElement('strong');
+    name.textContent = friend.name;
+    identity.append(avatar, name);
+    const actions = document.createElement('div');
+    actions.className = 'friend-actions';
+    const inviteButton = document.createElement('button');
+    inviteButton.type = 'button';
+    inviteButton.dataset.friendAction = friend.invited ? 'cancel' : 'invite';
+    inviteButton.dataset.friendName = friend.name;
+    inviteButton.textContent = friend.invited ? 'CANCEL' : 'INVITE';
+    inviteButton.disabled = !friend.invited && activePartySize >= 5;
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'friend-remove';
+    removeButton.dataset.friendAction = 'remove';
+    removeButton.dataset.friendName = friend.name;
+    removeButton.textContent = 'REMOVE';
+    actions.append(inviteButton, removeButton);
+    row.append(identity, actions);
+    friendsList.append(row);
+  });
+}
 
 function setMatchType(type) {
   if (queueInterval || queueTimeout) return;
@@ -768,6 +1391,47 @@ function setMatchType(type) {
 queueOptions.forEach((option) => {
   option.addEventListener('click', () => setMatchType(option.dataset.matchType));
 });
+
+document.querySelector('#add-friend-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const input = document.querySelector('#friend-name');
+  const name = input.value.trim().replace(/\\s+/g, ' ').slice(0, 20);
+  if (!name) return;
+  if (friends.some((friend) => friend.name.toLowerCase() === name.toLowerCase())) {
+    friendsNote.textContent = `${name} is already on your friends list.`;
+    return;
+  }
+  friends.push({ name, invited: false });
+  saveFriends();
+  renderFriends();
+  input.value = '';
+  friendsNote.textContent = `${name} added to your local friends list.`;
+});
+
+friendsList.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-friend-action]');
+  if (!button) return;
+  const friend = friends.find((entry) => entry.name === button.dataset.friendName);
+  if (!friend) return;
+  if (button.dataset.friendAction === 'remove') {
+    friends = friends.filter((entry) => entry !== friend);
+    friendsNote.textContent = `${friend.name} removed from your friends list.`;
+  } else if (button.dataset.friendAction === 'invite') {
+    if (friends.filter((entry) => entry.invited).length >= 4) {
+      friendsNote.textContent = 'Your fireteam is full.';
+      return;
+    }
+    friend.invited = true;
+    friendsNote.textContent = `Demo invite prepared for ${friend.name}; no message was sent.`;
+  } else {
+    friend.invited = false;
+    friendsNote.textContent = `Party invite to ${friend.name} cancelled.`;
+  }
+  saveFriends();
+  renderFriends();
+});
+
+renderFriends();
 
 function stopMatchmaking() {
   window.clearInterval(queueInterval);
@@ -833,6 +1497,7 @@ document.querySelector('#sound-toggle').addEventListener('click', () => {
 const pauseButton = document.querySelector('#pause-button');
 pauseButton.addEventListener('click', () => {
   if (!game.playing || game.over) return;
+  clearTouchControls();
   game.paused = true;
   pauseScreen.classList.remove('hidden');
   hud.classList.add('hidden');
@@ -841,12 +1506,18 @@ pauseButton.addEventListener('click', () => {
 
 document.querySelector('#resume').addEventListener('click', () => {
   game.paused = false;
+  if (matchMedia('(pointer: coarse)').matches) {
+    pauseScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    return;
+  }
   pauseScreen.classList.add('hidden');
   hud.classList.remove('hidden');
-  document.body.requestPointerLock?.();
+  canvas.requestPointerLock?.();
 });
 
 document.querySelector('#quit').addEventListener('click', () => {
+  clearTouchControls();
   game.playing = false;
   game.paused = false;
   pauseScreen.classList.add('hidden');
@@ -918,6 +1589,7 @@ function updateRenderer() {
     if (game.hitFlash > 0) game.hitFlash -= dt;
     else ui.damage.classList.remove('active');
 
+    if ((mouse.firing || touchInput.firing) && getWeapon().id === 'rifle') doShot();
     updateAim();
     movePlayer(dt);
     handleBots(dt);
@@ -952,6 +1624,11 @@ function updateRenderer() {
   rifle.group.rotation.z = -0.02 + (Math.random() - 0.5) * 0.01;
 
   renderer.render(scene, camera);
+  if (operatorPreview) {
+    resizeOperatorPreview();
+    operatorPreview.operator.rotation.y = Math.sin(performance.now() * 0.00025) * 0.035;
+    operatorPreview.renderer.render(operatorPreview.scene, operatorPreview.camera);
+  }
   updateHud();
 }
 
@@ -962,6 +1639,9 @@ function animate() {
 
 buildArena();
 resetBots();
+operatorPreview = createOperatorPreview();
+resizeOperatorPreview();
+renderArsenal();
 updateHud();
 animate();
 
@@ -970,6 +1650,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  resizeOperatorPreview();
 });
 
 window.addEventListener('blur', () => {

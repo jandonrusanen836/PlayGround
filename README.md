@@ -16,3 +16,7 @@
 - 👤 [Explore the creator's projects](https://go.ondev.store/jandonrusanen836).
 - 🌍 [Create with OMGithub](https://go.ondev.store/).
 <!-- omgithub:readme:end -->
+
+## Node.js multiplayer backend
+
+A JavaScript matchmaking/WebSocket server is in [`server/`](server/README.md). Run it with `cd server && npm install && npm start`; its health endpoint is `http://localhost:3001/health`. The service currently forms CTF match sessions (2–10 players, first to 12) and announces teams/rosters. Authoritative combat and browser-side online CTF integration are the next implementation steps.

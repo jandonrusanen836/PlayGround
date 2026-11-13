@@ -19,36 +19,52 @@
       <nav class="main-nav" aria-label="Main navigation">
         <button class="nav-link active" data-tab="games">Games</button><button class="nav-link" data-tab="plus">PlayStation Plus</button><button class="nav-link" data-tab="store">Store</button><button class="nav-link" data-tab="downloads">Downloads</button>
       </nav>
-      <div class="top-actions"><button class="icon-btn search-btn" data-action="search" aria-label="Search">⌕</button><button class="user-chip" data-action="profile"><span class="avatar small">J</span><span class="user-name">Jordan</span><span class="chevron">⌄</span></button></div>
+      <div class="top-actions"><button class="icon-btn search-btn" data-action="search" aria-label="Search">⌕</button><button class="user-chip" data-action="profile"><span class="avatar small user-avatar">🎮</span><span class="user-name">Player</span><span class="chevron">⌄</span></button></div>
     </header>
 
     <main id="screens">
       <section class="screen welcome-screen active" id="welcome">
-        <div class="welcome-copy"><div class="eyebrow"><i></i> YOUR NEXT ADVENTURE STARTS HERE</div><h1>Play has<br><em>no limits.</em></h1><p>A console experience made for the moments that stay with you.</p>
-          <button class="power-button" data-action="power"><span class="power-symbol">◉</span><span>Press the PlayStation icon to begin</span><span class="button-arrow">→</span></button>
-          <div class="welcome-foot"><span class="tiny-ps">PS</span><span>Press <kbd>Enter</kbd> or tap to power on</span></div>
-        </div>
-        <div class="console-stage" aria-hidden="true"><div class="halo"></div><div class="console"><div class="console-wing left-wing"></div><div class="console-core"><div class="console-glow"></div><div class="console-slit"></div><div class="console-mark">PS5</div></div><div class="console-wing right-wing"></div><div class="console-base"></div></div><div class="stage-caption"><span>PLAY HAS NO LIMITS</span><span>01 — READY</span></div></div>
-        <div class="welcome-bottom"><span>© 2025 Sony Interactive Entertainment</span><span>CONSOLE EXPERIENCE <b>•</b> DEMO</span></div>
+        <div class="welcome-atmosphere" aria-hidden="true"><div class="welcome-smoke"></div><div class="welcome-particles"></div></div>
+        <p class="welcome-prompt">Press the PS button on your controller.</p>
+        <button class="power-button" data-action="power" aria-label="Press the PlayStation button to start"><span class="power-symbol" aria-hidden="true"><b>P</b><i>S</i></span></button>
       </section>
 
       <section class="screen profile-screen" id="profiles">
-        <div class="profile-backdrop"></div><div class="profile-content"><div class="eyebrow"><i></i> WELCOME BACK</div><h1>Who's playing?</h1><p class="muted">Choose a player to continue</p>
-          <button class="profile-card" data-action="select-profile"><span class="avatar profile-avatar">J</span><span class="profile-info"><strong>Jordan</strong><small>Online · Ready to play</small></span><span class="profile-chevron">→</span></button>
-          <div class="profile-hint"><span>Continue as <b>Jordan</b></span><span>✦ &nbsp; 12,480 XP</span></div>
-        </div><div class="profile-console-glow"></div>
+        <div class="profile-backdrop"></div>
+        <div class="signup-layout">
+          <div class="signup-panel">
+            <div class="eyebrow"><i></i> YOUR PLAYER PROFILE</div><h1>Make it yours.</h1><p class="muted">Pick a username and an avatar. Your console identity starts here.</p>
+            <label class="signup-label" for="username-input">Choose a username</label>
+            <input id="username-input" class="username-input" maxlength="16" autocomplete="nickname" placeholder="e.g. CosmicKoala" aria-describedby="username-help">
+            <small class="signup-help" id="username-help">3–16 characters · letters, numbers, and underscores</small>
+            <div class="avatar-picker-label">Choose your look</div>
+            <div class="avatar-picker" role="group" aria-label="Choose an avatar">
+              <button class="avatar-option selected" data-avatar="🎮" aria-label="Controller avatar">🎮</button><button class="avatar-option" data-avatar="🦊" aria-label="Fox avatar">🦊</button><button class="avatar-option" data-avatar="🐸" aria-label="Frog avatar">🐸</button><button class="avatar-option" data-avatar="👾" aria-label="Alien avatar">👾</button><button class="avatar-option" data-avatar="🦄" aria-label="Unicorn avatar">🦄</button><button class="avatar-option" data-avatar="🐼" aria-label="Panda avatar">🐼</button>
+            </div>
+            <p class="signup-error" id="signup-error" role="alert" hidden></p>
+            <button class="primary-btn create-profile-btn" data-action="create-profile">Create player <span>→</span></button>
+            <p class="signup-note">Keep it kind: usernames that are offensive or impersonate others aren’t allowed.</p>
+          </div>
+          <aside class="social-preview">
+            <div class="social-card-head"><div><div class="eyebrow">COMMUNITY</div><h2>Players to know</h2></div><span class="online-count"><i></i> LIVE</span></div>
+            <p class="muted">Meet some popular players and add them to your friends list.</p>
+            <div class="popular-list" id="popular-users"></div>
+            <div class="signup-friends"><div class="social-card-head"><h3>Your friends</h3><span class="friend-count" id="signup-friend-count">0</span></div><div id="signup-friends-list" class="friends-list"><p class="friends-empty">Your friends will show up here.</p></div></div>
+          </aside>
+        </div>
+        <div class="profile-console-glow"></div>
       </section>
 
       <section class="screen dashboard-screen" id="dashboard">
         <div class="dashboard-inner">
-          <div class="greeting-row"><div><div class="eyebrow"><i></i> MONDAY, NOVEMBER 17, 2025</div><h1>Good evening, Jordan <span class="wave">✦</span></h1><p class="muted">Your next great adventure is one click away.</p></div><div class="status-pill"><span class="status-dot"></span> All systems operational</div></div>
+          <div class="greeting-row"><div><div class="eyebrow"><i></i> MONDAY, NOVEMBER 17, 2025</div><h1>Good evening, <span class="player-name">Player</span> <span class="wave">✦</span></h1><p class="muted">Your next great adventure is one click away.</p></div><div class="status-pill"><span class="status-dot"></span> All systems operational</div></div>
           <div class="feature-row">
             <article class="hero-card feature-card"><div class="hero-art art-fortnite"><div class="art-orb"></div><div class="art-silhouette"></div><span class="art-label">DROP IN</span></div><div class="hero-overlay"></div><div class="hero-content"><span class="tag">FEATURED · FREE TO PLAY</span><h2>Fortnite</h2><p>Jump into the action. Your squad is waiting.</p><button class="primary-btn" data-play="fortnite">Play now <span>→</span></button></div><div class="hero-pagination"><i class="selected"></i><i></i><i></i></div></article>
             <article class="side-feature"><div class="side-top"><div class="eyebrow">YOUR CONSOLE</div><div class="console-status"><div class="mini-console">PS</div><div><b>PlayStation 5</b><small>Ready to play</small></div><span class="online-dot"></span></div></div><div class="side-divider"></div><div class="side-bottom"><div class="eyebrow">RECENTLY PLAYED</div><div class="recent-game"><div class="mini-art art-rocket">RL</div><div><b>Rocket League</b><small>Today · 42 min</small></div><button data-play="rocketleague" aria-label="Play Rocket League">→</button></div><div class="recent-game"><div class="mini-art art-soccer">FC</div><div><b>EA SPORTS FC 24</b><small>Yesterday · 1 hr</small></div><button data-play="fc24" aria-label="Play EA SPORTS FC 24">→</button></div></div></article>
           </div>
           <div class="section-heading"><div><span class="eyebrow">PICK UP WHERE YOU LEFT OFF</span><h2>Your games <span class="count">05</span></h2></div><button class="text-link" data-tab="games">View library <span>→</span></button></div>
           <div class="game-strip" id="home-games"></div>
-          <div class="dashboard-lower"><button class="promo-banner" data-tab="plus"><span class="plus-icon">+</span><span><b>Make your play extraordinary</b><small>PlayStation Plus · Discover your next favourite</small></span><span class="promo-arrow">→</span><span class="banner-glow"></span></button><div class="quick-widget"><span class="widget-icon">↓</span><span><b>Downloads</b><small id="quick-downloads">You're all caught up</small></span><button data-tab="downloads">→</button></div></div>
+          <div class="dashboard-lower"><button class="promo-banner" data-tab="plus"><span class="plus-icon">+</span><span><b>Make your play extraordinary</b><small>PlayStation Plus · Discover your next favourite</small></span><span class="promo-arrow">→</span><span class="banner-glow"></span></button><div class="quick-widget"><span class="widget-icon">↓</span><span><b>Downloads</b><small id="quick-downloads">You're all caught up</small></span><button data-tab="downloads">→</button></div><section class="friends-widget"><div class="social-card-head"><div><b>Friends</b><small id="dashboard-friend-count">0 online</small></div><button class="friends-add" data-action="profile" aria-label="Manage friends">＋</button></div><div id="dashboard-friends-list" class="friends-list"><p class="friends-empty">Add players to see who's online.</p></div></section></div>
         </div>
       </section>
 
@@ -59,7 +75,21 @@
       </section>
 
       <section class="screen plus-screen" id="plus">
-        <div class="plus-hero"><div class="plus-orbit orbit-a"></div><div class="plus-orbit orbit-b"></div><div class="plus-copy"><div class="eyebrow"><i></i> PLAY WITHOUT LIMITS</div><div class="plus-wordmark"><span>PlayStation</span><b>PLUS</b></div><h1>More to play.<br><em>More to love.</em></h1><p>Discover hundreds of incredible games, new adventures every month, and so much more.</p><button class="primary-btn gold-btn" data-action="join-plus">Explore PlayStation Plus <span>→</span></button><div class="fine-print">A simulated membership experience · No purchase required</div></div><div class="plus-art"><div class="plus-disc disc-one">+</div><div class="plus-disc disc-two">✦</div><div class="plus-disc disc-three">◈</div><div class="plus-star">✳</div><div class="plus-layers"></div></div></div>
+        <div class="plus-hero">
+          <div class="plus-collage" aria-hidden="true">
+            <div class="collage-card days-gone"><span>DAYS GONE</span></div><div class="collage-card horizon"><span>HORIZON</span></div><div class="collage-card uncharted"><span>UNCHARTED 4</span></div><div class="collage-card fifa"><span>FIFA 22</span></div><div class="collage-card last-of-us"><span>THE LAST OF US</span></div>
+            <div class="collage-card battlefield"><span>BATTLEFIELD 1</span></div><div class="collage-card god-of-war"><span>GOD OF WAR</span></div><div class="collage-card ratchet"><span>RATCHET &amp; CLANK</span></div>
+            <div class="collage-card bloodborne"><span>BLOODBORNE</span></div><div class="collage-card call-of-duty"><span>CALL OF DUTY<br><b>BLACK OPS III</b></span></div><div class="collage-card crash"><span>CRASH<br>BANDICOOT</span></div><div class="collage-card tomb-raider"><span>RISE OF THE<br>TOMB RAIDER</span></div>
+          </div>
+          <div class="plus-arc" aria-hidden="true"></div>
+          <div class="plus-console-nav"><div class="plus-tabs"><button class="selected">Games</button><button>Media</button></div><div class="plus-console-actions"><button data-action="search" aria-label="Search">⌕</button><button data-action="system-update" aria-label="Settings">⚙</button><button class="plus-console-avatar user-avatar" data-action="profile" aria-label="Player profile">🎮</button><span>3:59 AM</span></div></div>
+          <div class="plus-game-rail" aria-label="PlayStation Plus games">
+            <button class="plus-app-card selected" data-action="join-plus" aria-label="PlayStation Plus"><svg class="playstation-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.984 2.596v17.547l3.915 1.261V6.688c0-.69.304-1.151.794-.991.636.18.76.814.76 1.505v5.875c2.441 1.193 4.362-.002 4.362-3.152 0-3.237-1.126-4.675-4.438-5.827-1.307-.448-3.728-1.186-5.39-1.502zm4.656 16.241l6.296-2.275c.715-.258.826-.625.246-.818-.586-.192-1.637-.139-2.357.123l-4.205 1.5V14.98l.24-.085s1.201-.42 2.913-.615c1.696-.18 3.785.03 5.437.661 1.848.601 2.04 1.472 1.576 2.072-.465.6-1.622 1.036-1.622 1.036l-8.544 3.107V18.86zM1.807 18.6c-1.9-.545-2.214-1.668-1.352-2.32.801-.586 2.16-1.052 2.16-1.052l5.615-2.013v2.313L4.205 17c-.705.271-.825.632-.239.826.586.195 1.637.15 2.343-.12L8.247 17v2.074c-.12.03-.256.044-.39.073-1.939.331-3.996.196-6.038-.479z"/></svg><small>PlayStation Plus</small></button>
+            <button class="plus-game-icon icon-blue" data-tab="games" aria-label="Game library">▶</button><button class="plus-game-icon icon-silver" data-tab="games" aria-label="Explore games">◉</button><button class="plus-game-icon icon-red" data-tab="store" aria-label="Browse games">SPU</button><button class="plus-game-icon icon-orbit" data-tab="games" aria-label="Game collection">◉</button><button class="plus-game-icon icon-hero" data-tab="games" aria-label="Adventure games">H</button><button class="plus-game-icon icon-spider" data-tab="games" aria-label="Action games">✷</button><button class="plus-game-icon icon-black" data-tab="games" aria-label="More games">◈</button><button class="plus-game-icon icon-sky" data-tab="store" aria-label="Game deals">✦</button><button class="plus-game-icon icon-green" data-tab="store" aria-label="Sports games">FIFA22</button><button class="plus-game-icon icon-blue" data-tab="games" aria-label="Browse collection">▶</button><button class="plus-game-icon icon-dark" data-tab="games" aria-label="More games">▦</button>
+          </div>
+          <div class="plus-copy"><div class="plus-eyebrow">PLAYSTATION PLUS COLLECTION</div><h1>THE<br>PLAYSTATION PLUS<br><strong>COLLECTION</strong></h1><p>New for PS Plus on PS5: Generation defining PS4 games now included with your membership.</p><button class="plus-explore" data-action="join-plus">Explore</button></div>
+          <div class="plus-shortcuts"><button data-action="join-plus"><span class="shortcut-icon">▣</span><small>The PS Plus Collection</small></button><button data-action="browse-store"><span class="shortcut-icon">◈</span><small>Exclusive Discounts</small></button></div>
+        </div>
         <div class="membership-row"><div><span class="eyebrow">YOUR MEMBERSHIP</span><h2>Choose your way to play</h2><p class="muted">Explore the tiers and find your perfect play.</p></div><div class="tier-cards"><button class="tier-card" data-action="join-plus"><span class="tier-name">ESSENTIAL</span><b>Play online.<br>Play together.</b><small>Monthly games · Online multiplayer</small><span class="tier-cta">Explore tier →</span></button><button class="tier-card extra" data-action="join-plus"><span class="tier-name">EXTRA <em>POPULAR</em></span><b>A world of games<br>at your fingertips.</b><small>Game catalogue · Ubisoft+ Classics</small><span class="tier-cta">Explore tier →</span></button><button class="tier-card premium" data-action="join-plus"><span class="tier-name">PREMIUM <em>BEST VALUE</em></span><b>Every era.<br>Every adventure.</b><small>Classics catalogue · Game trials</small><span class="tier-cta">Explore tier →</span></button></div></div>
       </section>
 

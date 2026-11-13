@@ -3,67 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wii Sports Remake</title>
+  <meta name="theme-color" content="#eaf8ff">
+  <title>Sports Resort — Island Games</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="game-container">
-    <!-- Main Menu -->
-    <div id="main-menu" class="screen">
-      <h1>Wii Sports</h1>
-      <div class="menu-options">
-        <button class="btn-sport" data-sport="tennis">Tennis</button>
-        <button class="btn-sport" data-sport="baseball">Baseball</button>
-        <button class="btn-sport" data-sport="golf">Golf</button>
-        <button class="btn-sport" data-sport="boxing">Boxing</button>
-        <button class="btn-sport" data-sport="bowling">Bowling</button>
-        <button class="btn-option" data-option="customize">Character Creator</button>
-        <button class="btn-option" data-option="online">Online Matchmaking</button>
+  <main id="app">
+    <section id="title-screen" class="screen title-screen active" aria-label="Title screen">
+      <div class="title-island">
+        <div class="sun"></div><div class="cloud cloud-one"></div><div class="cloud cloud-two"></div>
+        <div class="distant-island"></div><div class="water"></div>
+        <div class="title-palms"><i></i><i></i><i></i><i></i><i></i></div>
       </div>
-    </div>
+      <div class="title-lockup"><span class="eyebrow">WELCOME TO THE</span><h1>SPORTS<br><em>RESORT</em></h1><p>ISLAND GAMES • EST. TODAY</p></div>
+      <button id="start-button" class="press-start"><span class="start-orb">▶</span><span>PRESS TO START</span><small>CLICK OR PRESS ENTER</small></button>
+      <div class="title-footer"><span>✦ FIVE CLASSIC SPORTS ✦</span><span>MOVE • PLAY • REPEAT</span></div>
+    </section>
 
-    <!-- Character Creator -->
-    <div id="creator" class="screen">
-      <h2>Mii Character Creator</h2>
-      <div class="creator-panel">
-        <div class="creator-character" id="miicharacter"></div>
-        <div class="creator-controls">
-          <button class="btn-control" data-feat="gender">Gender</button>
-          <button class="btn-control" data-feat="head-shape">Head Shape</button>
-          <button class="btn-control" data-feat="hair">Hair</button>
-          <button class="btn-control" data-feat="eyes">Eyes</button>
-          <button class="btn-control" data-feat="nose">Nose</button>
-          <button class="btn-control" data-feat="mouth">Mouth</button>
-          <button class="btn-control" data-feat="eyebrows">Eyebrows</button>
-          <button class="btn-control" data-feat="facial-hair">Facial Hair</button>
-          <button class="btn-control" data-feat="glasses">Glasses</button>
-          <div class="color-picker">
-            <span>Outfit Color:</span>
-            <input type="color" id="outfit-color">
-          </div>
+    <section id="lobby-screen" class="screen lobby-screen" aria-label="Main lobby">
+      <header class="topbar"><a class="brand" href="#" aria-label="Sports Resort home"><span class="brand-mark">S</span><span>SPORTS <b>RESORT</b><small>ISLAND GAMES</small></span></a><div class="topbar-right"><span class="online-dot"></span> ISLAND CLUB <span class="player-chip"><span id="mini-avatar">🙂</span><b id="player-name">PLAYER 1</b></span></div></header>
+      <div class="lobby-content">
+        <div class="lobby-intro"><div><div class="eyebrow blue">YOUR ISLAND, YOUR GAME</div><h2>Choose your<br><em>next adventure.</em></h2><p>Five sports. One sunny island. Let the games begin.</p></div><div class="island-stamp"><span>☀</span><b>ISLAND<br>GAMES</b><small>VOL. 01</small></div></div>
+        <div class="sport-grid">
+          <button class="sport-card card-tennis" data-sport="tennis"><span class="card-index">01 / COURT</span><span class="sport-illustration">🎾</span><span class="card-copy"><b>TENNIS</b><small>Rally for the win</small></span><span class="card-arrow">↗</span></button>
+          <button class="sport-card card-baseball" data-sport="baseball"><span class="card-index">02 / DIAMOND</span><span class="sport-illustration">⚾</span><span class="card-copy"><b>BASEBALL</b><small>Step up to the plate</small></span><span class="card-arrow">↗</span></button>
+          <button class="sport-card card-golf" data-sport="golf"><span class="card-index">03 / GREENS</span><span class="sport-illustration">⛳</span><span class="card-copy"><b>GOLF</b><small>Find your perfect shot</small></span><span class="card-arrow">↗</span></button>
+          <button class="sport-card card-boxing" data-sport="boxing"><span class="card-index">04 / ARENA</span><span class="sport-illustration">🥊</span><span class="card-copy"><b>BOXING</b><small>Float like a champion</small></span><span class="card-arrow">↗</span></button>
+          <button class="sport-card card-bowling" data-sport="bowling"><span class="card-index">05 / LANES</span><span class="sport-illustration">🎳</span><span class="card-copy"><b>BOWLING</b><small>Roll a perfect game</small></span><span class="card-arrow">↗</span></button>
         </div>
+        <div class="lobby-bottom"><button class="utility-card" id="creator-open"><span class="utility-icon">✳</span><span><b>MAKE YOUR PLAYER</b><small>Customize your island look</small></span><span class="utility-arrow">→</span></button><button class="utility-card online-card" id="online-open"><span class="utility-icon">◎</span><span><b>PLAY ONLINE</b><small>Find a match on the island</small></span><span class="utility-arrow">→</span></button><div class="lobby-weather"><span>☀</span><span><b>ISLAND WEATHER</b><small>Sunny · 24°C</small></span></div></div>
       </div>
-      <button class="btn-back" onclick="goBack()">Back</button>
-    </div>
+      <footer class="lobby-footer"><span>◉ YOUR ISLAND SPORTS CLUB</span><span>GOOD VIBES. GREAT GAMES.</span><span>PLAYER RATING <b id="rating">BEGINNER</b></span></footer>
+    </section>
 
-    <!-- Sport Screens -->
-    <div id="sport-screen" class="screen">
-      <div class="sport-header">
-        <span id="sport-name"></span>
-        <div id="matchmaking-timer" class="timer hidden">Loading... Matchmaking</div>
-      </div>
-      <div class="game-area" id="game-area"></div>
-      <div class="controls-instruction" id="controls-instruction"></div>
-    </div>
+    <section id="creator-screen" class="screen sub-screen" aria-label="Character creator">
+      <header class="sub-header"><button class="back-button" data-back="lobby-screen">← BACK</button><div><div class="eyebrow blue">PLAYER STUDIO</div><h2>Make it <em>you.</em></h2></div><span class="step-pill">01 — 03</span></header>
+      <div class="creator-layout"><div class="avatar-stage"><div class="stage-sun"></div><div class="avatar-scene"><div class="avatar-shadow"></div><div id="avatar" class="avatar"><div class="avatar-hair"></div><div class="avatar-head"><div class="avatar-brows"><i></i><i></i></div><div class="avatar-eyes"><i></i><i></i></div><div class="avatar-nose"></div><div class="avatar-mouth"></div><div class="avatar-glasses"></div><div class="avatar-facial"></div></div><div class="avatar-body"><i class="hand hand-left"></i><i class="hand hand-right"></i><i class="leg leg-left"></i><i class="leg leg-right"></i><i class="shoe shoe-left"></i><i class="shoe shoe-right"></i></div></div></div><div class="avatar-caption"><b id="avatar-caption-name">PLAYER 1</b><span>ISLAND ATHLETE · READY TO PLAY</span></div></div>
+        <div class="creator-options"><label class="field-label">PLAYER NAME<input id="name-input" type="text" maxlength="12" value="PLAYER 1"></label><div class="field-label">STYLE<div class="choice-row"><button class="choice active" data-feature="style" data-value="classic">Classic</button><button class="choice" data-feature="style" data-value="sporty">Sporty</button><button class="choice" data-feature="style" data-value="chill">Chill</button></div></div><div class="field-label">SKIN TONE<div class="swatches" id="skin-swatches"><button class="swatch active" data-color="#f3c59a" style="--swatch:#f3c59a" aria-label="Warm beige"></button><button class="swatch" data-color="#d89b6a" style="--swatch:#d89b6a" aria-label="Tan"></button><button class="swatch" data-color="#9c6246" style="--swatch:#9c6246" aria-label="Brown"></button><button class="swatch" data-color="#f0d7b8" style="--swatch:#f0d7b8" aria-label="Light"></button><button class="swatch" data-color="#70432f" style="--swatch:#70432f" aria-label="Deep brown"></button></div></div><div class="field-label">HAIR STYLE<div class="choice-row"><button class="choice active" data-feature="hair" data-value="swoop">Swoop</button><button class="choice" data-feature="hair" data-value="spiky">Spiky</button><button class="choice" data-feature="hair" data-value="bob">Bob</button></div></div><div class="field-label">OUTFIT COLOR<div class="color-row"><button class="outfit-swatch active" data-color="#f25c54" style="--swatch:#f25c54" aria-label="Coral"></button><button class="outfit-swatch" data-color="#3e91ce" style="--swatch:#3e91ce" aria-label="Blue"></button><button class="outfit-swatch" data-color="#f4bd3c" style="--swatch:#f4bd3c" aria-label="Yellow"></button><button class="outfit-swatch" data-color="#45a675" style="--swatch:#45a675" aria-label="Green"></button><button class="outfit-swatch" data-color="#9b70bd" style="--swatch:#9b70bd" aria-label="Purple"></button><input id="custom-color" type="color" value="#f25c54" aria-label="Choose outfit color"></div></div><button id="save-player" class="primary-button">SAVE PLAYER <span>→</span></button></div></div>
+    </section>
 
-    <!-- Result Screen -->
-    <div id="result-screen" class="screen">
-      <h2 id="result-title"></h2>
-      <p id="result-desc"></p>
-      <button class="btn-back" onclick="goBack()">Back to Menu</button>
-    </div>
-  </div>
+    <section id="matchmaking-screen" class="screen matchmaking-screen" aria-label="Online matchmaking"><button class="back-button light-back" data-back="lobby-screen">← CANCEL</button><div class="matchmaking-art"><span class="match-orbit orbit-a"></span><span class="match-orbit orbit-b"></span><span class="match-ball">🎾</span><span class="match-star star-a">✦</span><span class="match-star star-b">✦</span></div><div class="eyebrow">ISLAND CLUB · ONLINE</div><h2>Finding your<br><em>next rival.</em></h2><div class="search-state"><span class="search-pulse"></span><b id="search-label">LOADING... MATCHMAKING</b></div><div class="search-time"><small>TIME SEARCHING</small><strong id="search-timer">00:00</strong></div><div class="match-dots"><i></i><i></i><i></i></div><p class="match-note">Looking for a player nearby. Your game will begin soon.</p></section>
 
-  <script src="script.js"></script>
-</body>
+    <section id="game-screen" class="screen game-screen" aria-label="Sports game"><header class="game-topbar"><button class="back-button" id="leave-game">← EXIT</button><div class="game-title"><span class="eyebrow blue">ISLAND CLUB · MATCH 01</span><h2 id="game-title">TENNIS</h2></div><div class="scoreboard"><span class="score-player"><i class="score-dot player-dot"></i><b id="score-player-name">YOU</b><strong id="score-player">0</strong></span><span class="score-divider">—</span><span class="score-player opponent"><i class="score-dot opponent-dot"></i><b>CPU</b><strong id="score-opponent">0</strong></span></div><button class="sound-toggle" id="sound-toggle" aria-label="Toggle sound">♫ <span>SOUND ON</span></button></header><div class="game-stage-wrap"><div class="stage-label" id="stage-label">COURT 01 · SUNNY ISLAND</div><canvas id="game-canvas" width="1000" height="560" aria-label="Game field"></canvas><div class="stage-toast" id="stage-toast" aria-live="polite"></div><div class="swipe-hint" id="swipe-hint"><span>↗</span> SWIPE UP TO PLAY</div></div><div class="game-controls"><div class="techniques" id="techniques"></div><div class="swing-controls"><span class="swing-tip"><b>YOUR MOVE</b><small id="game-instruction">Swipe up or press space</small></span><button id="action-button" class="action-button"><span>↗</span><b id="action-label">SWING</b></button></div></div><div class="game-bottom"><span id="round-label">SET 1 · FIRST TO 5</span><span>SWIPE UP · OR PRESS SPACE</span><button id="new-game">NEW ROUND ↻</button></div></section>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+  </body>
 </html>

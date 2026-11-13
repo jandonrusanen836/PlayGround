@@ -1281,10 +1281,16 @@ const queueDetail = document.querySelector('#queue-detail');
 const queueTimer = document.querySelector('#queue-timer');
 const queueOptions = [...document.querySelectorAll('.queue-option')];
 const lobbyDisclaimer = document.querySelector('#lobby-disclaimer');
+const onlinePlayerCount = document.querySelector('#online-player-count');
 let selectedMatchType = 'practice';
 let queueInterval = 0;
 let queueTimeout = 0;
 let queueStartedAt = 0;
+let matchSocket = null;
+let onlineQueued = false;
+let onlineMatchId = null;
+let onlineConnected = false;
+let onlineQueueCount = 0;
 
 const friendsList = document.querySelector('#friends-list');
 const friendsNote = document.querySelector('#friends-note');
@@ -1368,6 +1374,126 @@ function renderFriends() {
   });
 }
 
+function updateOnlineAvailability() {
+  onlinePlayerCount.textContent = onlineConnected
+    ? `${onlineQueueCount} PLAYER${onlineQueueCount === 1 ? '' : 'S'} SEARCHING`
+    : 'SERVER DISCONNECTED';
+  const onlineOptionState = document.querySelector('[data-match-type="online"] .option-state');
+  onlineOptionState.textContent = onlineConnected ? 'READY' : 'OFFLINE';
+  if (selectedMatchType === 'online' && !onlineQueued && !onlineMatchId) {
+    findMatchButton.disabled = !onlineConnected;
+    findMatchButton.querySelector('span').textContent = onlineConnected ? 'FIND ONLINE MATCH' : 'CONNECTING';
+  }
+}
+
+function connectMatchServer() {
+  if (matchSocket && (matchSocket.readyState === WebSocket.OPEN || matchSocket.readyState === WebSocket.CONNECTING)) return;
+  const configuredUrl = window.FRONTLINE_SERVER_URL || new URLSearchParams(location.search).get('server');
+  const defaultProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const defaultHost = location.hostname || 'localhost';
+  const serverUrl = configuredUrl || `${defaultProtocol}//${defaultHost}:3001`;
+  onlineConnected = false;
+  onlinePlayerCount.textContent = 'CONNECTING TO SERVER…';
+  updateOnlineAvailability();
+
+  let socket;
+  try {
+    socket = new WebSocket(serverUrl);
+  } catch {
+    onlinePlayerCount.textContent = 'INVALID SERVER ADDRESS';
+    return;
+  }
+  matchSocket = socket;
+  socket.addEventListener('message', (event) => {
+    if (matchSocket !== socket) return;
+    let message;
+    try { message = JSON.parse(event.data); } catch { return; }
+    if (message.type === 'connected') {
+      onlineConnected = true;
+      updateOnlineAvailability();
+      if (selectedMatchType === 'online' && !onlineQueued && !onlineMatchId) {
+        queueDetail.textContent = 'Connected · queue for an online CTF session';
+        lobbyDisclaimer.textContent = 'ONLINE CTF MATCHMAKING · FIRST TO 12';
+      }
+    } else if (message.type === 'queue.count') {
+      onlineQueueCount = Number(message.queuedPlayers) || 0;
+      updateOnlineAvailability();
+    } else if (message.type === 'queue.joined') {
+      onlineQueued = true;
+      queueStartedAt = Date.now();
+      queueStatus.classList.add('searching');
+      queueTitle.textContent = 'SEARCHING FOR CTF MATCH';
+      queueDetail.textContent = `${message.position || 1} IN QUEUE · WAITING FOR OPERATORS`;
+      findMatchButton.disabled = true;
+      findMatchButton.querySelector('span').textContent = 'SEARCHING';
+      cancelQueueButton.classList.remove('hidden');
+      queueInterval = window.setInterval(() => {
+        const elapsed = Math.floor((Date.now() - queueStartedAt) / 1000);
+        queueTimer.textContent = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
+      }, 250);
+    } else if (message.type === 'match.found') {
+      onlineQueued = false;
+      window.clearInterval(queueInterval);
+      queueInterval = 0;
+      onlineMatchId = message.match?.id || null;
+      queueStatus.classList.remove('searching');
+      queueTitle.textContent = 'CTF SESSION FOUND';
+      const players = message.match?.players?.length || 0;
+      queueDetail.textContent = `${players} OPERATORS · ${message.match?.map || 'IRON YARD'} · FIRST TO ${message.match?.scoreLimit || 12}`;
+      queueTimer.textContent = 'READY';
+      cancelQueueButton.classList.add('hidden');
+      queueOptions.forEach((option) => { option.disabled = true; });
+      findMatchButton.disabled = true;
+      findMatchButton.querySelector('span').textContent = 'GAMEPLAY NOT READY';
+      lobbyDisclaimer.textContent = 'SESSION MATCHED · ONLINE CTF GAMEPLAY/SYNCHRONIZATION IS NOT IMPLEMENTED YET';
+    } else if (message.type === 'queue.cancelled') {
+      onlineQueued = false;
+      window.clearInterval(queueInterval);
+      queueInterval = 0;
+      cancelQueueButton.classList.add('hidden');
+      queueOptions.forEach((option) => { option.disabled = false; });
+      setMatchType(selectedMatchType);
+    } else if (message.type === 'error') {
+      onlineQueued = false;
+      window.clearInterval(queueInterval);
+      queueInterval = 0;
+      cancelQueueButton.classList.add('hidden');
+      queueStatus.classList.remove('searching');
+      queueTitle.textContent = 'MATCHMAKING ERROR';
+      queueDetail.textContent = message.message || 'Unable to join the online queue.';
+      queueTimer.textContent = '--:--';
+      queueOptions.forEach((option) => { option.disabled = false; });
+      updateOnlineAvailability();
+    } else if (message.type === 'match.left') {
+      onlineMatchId = null;
+    }
+  });
+  socket.addEventListener('close', () => {
+    if (matchSocket !== socket) return;
+    matchSocket = null;
+    onlineConnected = false;
+    onlineQueued = false;
+    onlineMatchId = null;
+    window.clearInterval(queueInterval);
+    queueInterval = 0;
+    cancelQueueButton.classList.add('hidden');
+    queueOptions.forEach((option) => { option.disabled = false; });
+    updateOnlineAvailability();
+    if (selectedMatchType === 'online') {
+      queueStatus.classList.remove('searching');
+      queueTitle.textContent = 'SERVER DISCONNECTED';
+      queueDetail.textContent = 'Check the server and select Online Multiplayer to reconnect.';
+      queueTimer.textContent = '--:--';
+    }
+  });
+  socket.addEventListener('error', () => {
+    if (selectedMatchType === 'online') {
+      queueTitle.textContent = 'SERVER UNAVAILABLE';
+      queueDetail.textContent = 'Start the Node.js server, then select Online Multiplayer to retry.';
+    }
+  });
+}
+
 function setMatchType(type) {
   if (queueInterval || queueTimeout) return;
   selectedMatchType = type;
@@ -1378,14 +1504,18 @@ function setMatchType(type) {
   });
   const online = type === 'online';
   queueStatus.classList.remove('searching');
-  queueTitle.textContent = online ? 'ONLINE SERVICE NOT CONFIGURED' : 'READY TO DEPLOY';
-  queueDetail.textContent = online ? 'A multiplayer server is required to search.' : 'Practice match · bots fill open slots';
+  queueTitle.textContent = online ? (onlineConnected ? 'ONLINE READY' : 'CONNECTING TO SERVER') : 'READY TO DEPLOY';
+  queueDetail.textContent = online
+    ? (onlineConnected ? 'Connected · queue for an online CTF session' : 'Connecting to the matchmaking server…')
+    : 'Practice match · bots fill open slots';
   queueTimer.textContent = online ? '--:--' : '00:00';
-  findMatchButton.disabled = online;
-  findMatchButton.querySelector('span').textContent = online ? 'ONLINE UNAVAILABLE' : 'FIND MATCH';
+  findMatchButton.disabled = online && !onlineConnected;
+  findMatchButton.querySelector('span').textContent = online ? (onlineConnected ? 'FIND ONLINE MATCH' : 'CONNECTING') : 'FIND MATCH';
   lobbyDisclaimer.textContent = online
-    ? 'ONLINE MULTIPLAYER REQUIRES A MATCHMAKING SERVER'
+    ? 'ONLINE CTF MATCHMAKING · FIRST TO 12 · GAMEPLAY SYNC NOT YET IMPLEMENTED'
     : 'LOCAL PRACTICE MATCHMAKING · BOTS FILL OPEN SLOTS';
+  if (online) connectMatchServer();
+  updateOnlineAvailability();
 }
 
 queueOptions.forEach((option) => {
@@ -1433,7 +1563,27 @@ friendsList.addEventListener('click', (event) => {
 
 renderFriends();
 
+function sendMatchMessage(message) {
+  if (!matchSocket || matchSocket.readyState !== WebSocket.OPEN) return false;
+  matchSocket.send(JSON.stringify(message));
+  return true;
+}
+
 function stopMatchmaking() {
+  if (selectedMatchType === 'online') {
+    if (onlineQueued) sendMatchMessage({ type: 'queue.cancel' });
+    onlineQueued = false;
+    window.clearInterval(queueInterval);
+    queueInterval = 0;
+    cancelQueueButton.classList.add('hidden');
+    queueOptions.forEach((option) => { option.disabled = false; });
+    if (onlineMatchId) {
+      sendMatchMessage({ type: 'match.leave' });
+      onlineMatchId = null;
+    }
+    setMatchType(selectedMatchType);
+    return;
+  }
   window.clearInterval(queueInterval);
   window.clearTimeout(queueTimeout);
   queueInterval = 0;
@@ -1444,7 +1594,28 @@ function stopMatchmaking() {
 }
 
 function beginMatchmaking() {
-  if (selectedMatchType !== 'practice' || queueInterval || game.playing) return;
+  if (queueInterval || game.playing) return;
+  if (selectedMatchType === 'online') {
+    if (!onlineConnected || !matchSocket || matchSocket.readyState !== WebSocket.OPEN || onlineQueued || onlineMatchId) return;
+    queueOptions.forEach((option) => { option.disabled = true; });
+    onlineQueued = true;
+    queueStartedAt = Date.now();
+    queueStatus.classList.add('searching');
+    queueTitle.textContent = 'JOINING CTF QUEUE';
+    queueDetail.textContent = 'Requesting an online match…';
+    queueTimer.textContent = '00:00';
+    findMatchButton.disabled = true;
+    findMatchButton.querySelector('span').textContent = 'CONNECTING';
+    cancelQueueButton.classList.remove('hidden');
+    if (!sendMatchMessage({ type: 'queue.join', mode: 'ctf', name: 'ROOKIE' })) {
+      onlineQueued = false;
+      queueOptions.forEach((option) => { option.disabled = false; });
+      cancelQueueButton.classList.add('hidden');
+      updateOnlineAvailability();
+    }
+    return;
+  }
+  if (selectedMatchType !== 'practice') return;
   queueOptions.forEach((option) => { option.disabled = true; });
   queueStartedAt = Date.now();
   queueStatus.classList.add('searching');
